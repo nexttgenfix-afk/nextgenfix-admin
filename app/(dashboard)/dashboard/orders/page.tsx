@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { MoreHorizontal, Search, Download, RefreshCw, Eye, XCircle, CookingPot, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { useToast } from "@/hooks/use-toast"
 
 interface OrderItem {
@@ -46,7 +48,13 @@ export interface Order {
     totalAmount?: number;
     status?: string;
     createdAt?: string;
-    deliveryAddress?: string; // Backend now returns formatted string
+    deliveryAddress?: string | {
+      street: string;
+      city: string;
+      state: string;
+      pincode: string;
+      landmark?: string;
+    };
     paymentMethod?: string;
     paymentStatus?: string;
     paymentDetails?: {
@@ -73,13 +81,22 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
   const { toast } = useToast();
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get<{ message: string; success: boolean; orders: ApiOrder[] }>(
-        '/api/orders/admin/all'
+        '/orders/admin/all',
+        {
+          params: {
+            search: searchQuery || undefined,
+            status: statusFilter !== 'all' ? statusFilter : undefined,
+            page: 1,
+            limit: 100,
+          }
+        }
       );
       const data = response.data;
       console.log('Fetched orders data:', data);
@@ -124,7 +141,14 @@ export default function OrdersPage() {
           totalPrice: o.billing?.totalAmount ?? o.totalAmount ?? 0,
           status: mappedStatus,
           orderTimestamp: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
-          deliveryAddress: o.deliveryAddress || "", // Backend now returns formatted string
+          deliveryAddress: typeof o.deliveryAddress === 'object' && o.deliveryAddress !== null
+            ? [
+                o.deliveryAddress.street,
+                o.deliveryAddress.city,
+                o.deliveryAddress.state,
+                o.deliveryAddress.pincode ? `- ${o.deliveryAddress.pincode}` : null
+              ].filter(Boolean).join(', ').replace(', -', ' -') + (o.deliveryAddress.landmark ? ` (${o.deliveryAddress.landmark})` : '')
+            : (o.deliveryAddress || "-"),
           paymentMethod: o.paymentDetails?.method || o.paymentMethod || "-",
           paymentStatus:
             ((o.paymentDetails?.status || o.paymentStatus || "Pending").toLowerCase() === "paid"
@@ -160,7 +184,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [searchQuery, statusFilter, toast]);
 
   useEffect(() => {
     fetchOrders()
@@ -168,7 +192,7 @@ export default function OrdersPage() {
 
   const handleViewOrder = async (orderId: string) => {
     try {
-  await api.get(`/api/orders/${orderId}`);
+  await api.get(`/orders/${orderId}`);
       // TODO: Implement order details dialog
       toast({ title: "Order details fetched", description: `Order ${orderId} details loaded.` });
     } catch (err) {
@@ -179,9 +203,19 @@ export default function OrdersPage() {
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus, newPaymentStatus?: "Paid" | "Pending" | "Failed" | "Refunded") => {
     try {
+      // Normalize frontend-friendly statuses to backend enum values
+      const statusMap: Record<string, string> = {
+        Ordered: 'placed',
+        Preparing: 'preparing',
+        Dispatched: 'out-for-delivery',
+        Delivered: 'delivered',
+        Canceled: 'cancelled'
+      };
+      const mappedStatus = (statusMap as any)[newStatus] || newStatus.toLowerCase();
+
       await api.put(
-        `/api/orders/${orderId}/status`,
-        { status: newStatus, paymentStatus: newPaymentStatus }
+        `/orders/${orderId}/status`,
+        { status: mappedStatus, paymentStatus: newPaymentStatus }
       );
       toast({ title: "Order updated!", description: `Order ${orderId} status updated to ${newStatus}.` });
       fetchOrders();
@@ -193,7 +227,7 @@ export default function OrdersPage() {
 
   const handleExportOrders = async () => {
     try {
-      const response = await api.get('/api/admin/orders-export', {
+      const response = await api.get('/admin/orders-export', {
         responseType: "blob"
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -223,30 +257,43 @@ export default function OrdersPage() {
   // Removed unused filteredOrders
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          <Input
-            placeholder="Search orders by user or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-64"
-          />
-          <Button variant="ghost" className="ml-2" onClick={fetchOrders}>
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex items-center">
-          <Button variant="ghost" className="ml-2" onClick={handleExportOrders}>
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="ghost" className="ml-2" onClick={fetchOrders}>
-            <RefreshCw className="h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchOrders}>
+            <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportOrders}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
           </Button>
         </div>
       </div>
+
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input type="search" placeholder="Search orders by ID, user, or phone..." className="pl-8" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Select value={statusFilter} onValueChange={(value: string) => setStatusFilter(value)}>
+            <SelectTrigger className="h-8 w-[150px]">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="ordered">Ordered</SelectItem>
+              <SelectItem value="preparing">Preparing</SelectItem>
+              <SelectItem value="dispatched">Dispatched</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="canceled">Canceled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -289,35 +336,23 @@ export default function OrdersPage() {
               </TableCell>
               <TableCell>{order.totalPrice}</TableCell>
               <TableCell>
-                <Badge
-                  className="capitalize"
-                  variant={
-                    order.status === "Delivered"
-                      ? "secondary"
-                      : order.status === "Canceled"
-                        ? "destructive"
-                        : "default"
-                  }
-                >
-                  {order.status}
-                </Badge>
+                <StatusBadge
+                  status={order.status}
+                  category="order"
+                  compact
+                  ariaLabel={`Order status: ${order.status}`}
+                />
               </TableCell>
               <TableCell>{order.orderTimestamp}</TableCell>
               <TableCell>{order.deliveryAddress}</TableCell>
               <TableCell>{order.paymentMethod}</TableCell>
               <TableCell>
-                <Badge
-                  className="capitalize"
-                  variant={
-                    order.paymentStatus === "Paid"
-                      ? "secondary"
-                      : order.paymentStatus === "Refunded"
-                        ? "default"
-                        : "destructive"
-                  }
-                >
-                  {order.paymentStatus}
-                </Badge>
+                <StatusBadge
+                  status={order.paymentStatus}
+                  category="payment"
+                  compact
+                  ariaLabel={`Payment status: ${order.paymentStatus}`}
+                />
               </TableCell>
               <TableCell>
                 <DropdownMenu>

@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { useToast } from "@/hooks/use-toast"
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon, toggleCouponStatus, generateCouponCode, type Coupon } from "@/lib/api/coupons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -288,7 +289,7 @@ export default function CouponsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Coupons</h2>
         <div className="flex items-center space-x-2">
@@ -365,9 +366,7 @@ export default function CouponsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={coupon.isActive ? "default" : "secondary"}>
-                      {coupon.isActive ? "Active" : "Inactive"}
-                    </Badge>
+                    <StatusBadge status={coupon.isActive ? 'Active' : 'Inactive'} />
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

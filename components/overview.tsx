@@ -3,9 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import axios from "axios";
-import { getCookie } from "@/lib/utils";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import api from "@/lib/api";
 
 interface ChartDataPoint {
   name: string;
@@ -25,11 +23,7 @@ export function Overview() {
     setError(null);
     const fetchStats = async () => {
       try {
-        const token = getCookie('adminToken');
-        const res = await axios.get(`${API_BASE_URL}/api/admin/stats`, {
-          withCredentials: true,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await api.get('/admin/stats');
         const trends = res.data.trends;
         // Map API trends to recharts data format
         const data: ChartDataPoint[] = trends.months.map((month: string, i: number) => ({

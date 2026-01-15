@@ -20,6 +20,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import StatusBadge from "@/components/status-badge";
 import { useToast } from "@/hooks/use-toast";
 import * as couponsApi from "@/lib/api/coupons";
 import { format } from "date-fns";
@@ -136,7 +137,7 @@ export default function ReferralsPage() {
   };
 
   return (
-    <div className="space-y-4 p-4 md:p-8 pt-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Referral Audit</h2>
         <div className="flex items-center gap-2">
@@ -214,15 +215,7 @@ export default function ReferralsPage() {
                     {referral.dateReferred ? format(new Date(referral.dateReferred), 'MMM dd, yyyy HH:mm') : 'N/A'}
                   </TableCell>
                   <TableCell>
-                    {referral.rewardClaimed ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        Claimed
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                        Pending
-                      </Badge>
-                    )}
+                    <StatusBadge status={referral.rewardClaimed ? "Claimed" : "Pending"} />
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate" title={referral.rewardDetails}>
                     {referral.rewardDetails}

@@ -3,6 +3,7 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useCallback, useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -372,22 +373,7 @@ export default function ComplaintsPage() {
       complaint.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const getStatusColor = (status: Complaint["status"]) => {
-    // Normalize status to lowercase, remove spaces and hyphens for matching
-    const normalized = String(status).toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
-    switch (normalized) {
-      case "open":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "inprogress":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "resolved":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "closed":
-        return "bg-gray-200 text-gray-800 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  }
+
 
   const getPriorityColor = (priority: Complaint["priority"]) => {
     switch (priority.toLowerCase()) {
@@ -543,9 +529,7 @@ export default function ComplaintsPage() {
                   <Badge variant="outline">{complaint.category}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={getStatusColor(complaint.status)}>
-                    {complaint.status?.charAt(0).toUpperCase() + complaint.status?.slice(1)}
-                  </Badge>
+                  <StatusBadge status={complaint.status} />
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={getPriorityColor(complaint.priority)}>
@@ -637,9 +621,11 @@ export default function ComplaintsPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Status</p>
-                  <Badge variant="secondary" className={getStatusColor(selectedComplaint.status)}>
-                    {selectedComplaint.status}
-                  </Badge>
+                  <StatusBadge
+                    status={selectedComplaint.status}
+                    category="generic"
+                    ariaLabel={`Complaint status: ${selectedComplaint.status}`}
+                  />
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Priority</p>

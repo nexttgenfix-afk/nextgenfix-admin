@@ -12,7 +12,6 @@ import {
   CheckCircle2, 
   RotateCcw,
   Lock,
-  Search,
   Filter,
   MoreHorizontal
 } from "lucide-react"
@@ -26,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { useToast } from "@/hooks/use-toast"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { 
@@ -171,7 +171,7 @@ export default function SpinWheelPage() {
   const config = configData?.config
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Spin Wheel Rewards</h2>
         <div className="flex items-center space-x-2">
@@ -444,13 +444,6 @@ export default function SpinWheelPage() {
               <CardDescription>View all rewards won by users and their current status.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Input placeholder="Search user or code..." className="w-[300px]" />
-                  <Button variant="ghost" size="icon"><Search className="h-4 w-4" /></Button>
-                </div>
-              </div>
-
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -486,13 +479,13 @@ export default function SpinWheelPage() {
                       <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {record.prizeWon.type === 'blank' ? (
-                          <Badge variant="secondary">No Reward</Badge>
+                          <StatusBadge status="No Reward" />
                         ) : record.couponGenerated?.usedCount ? (
-                          <Badge variant="default" className="bg-green-600">Redeemed</Badge>
+                          <StatusBadge status="Redeemed" />
                         ) : new Date(record.couponGenerated?.validUntil || "") < new Date() ? (
-                          <Badge variant="destructive">Expired</Badge>
+                          <StatusBadge status="Expired" />
                         ) : (
-                          <Badge variant="default">Active</Badge>
+                          <StatusBadge status="Active" />
                         )}
                       </TableCell>
                       <TableCell className="text-right">

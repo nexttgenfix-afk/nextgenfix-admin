@@ -353,14 +353,14 @@ export default function SettingsPage() {
   ] as const
 
   const tiers = [
-    { key: 'bronze', label: 'Bronze', color: 'bg-amber-100 text-amber-800' },
-    { key: 'silver', label: 'Silver', color: 'bg-gray-100 text-gray-800' },
-    { key: 'gold', label: 'Gold', color: 'bg-yellow-100 text-yellow-800' },
+    { key: 'bronze', label: 'Bronze', color: 'bg-status-warning-100 text-status-warning-800' },
+    { key: 'silver', label: 'Silver', color: 'bg-status-neutral-100 text-status-neutral-800' },
+    { key: 'gold', label: 'Gold', color: 'bg-status-warning-100 text-status-warning-800' },
   ] as const
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex-1 space-y-4">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <SettingsIcon className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
@@ -372,7 +372,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
       </div>

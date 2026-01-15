@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -375,16 +376,12 @@ export default function UsersPage() {
                 </TableCell>
                 <TableCell>{getTierBadge(user.tier)}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={user.status === "Active" ? "default" : "secondary"}
-                    className={
-                      user.status === "Active"
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                    }
-                  >
-                    {user.status === "Active" ? "Active" : "Inactive"}
-                  </Badge>
+                  <StatusBadge
+                    status={user.status}
+                    category="generic"
+                    compact
+                    ariaLabel={`User status: ${user.status}`}
+                  />
                 </TableCell>
                 <TableCell>{user.totalOrders}</TableCell>
                 <TableCell>{user.createdAt instanceof Date ? user.createdAt.toLocaleDateString() : user.createdAt}</TableCell>
@@ -503,16 +500,11 @@ export default function UsersPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Status</p>
-                  <Badge
-                    variant={selectedUser.status === "Active" ? "default" : "secondary"}
-                    className={
-                      selectedUser.status === "Active"
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                    }
-                  >
-                    {selectedUser.status === "Active" ? "Active" : "Inactive"}
-                  </Badge>
+                  <StatusBadge
+                    status={selectedUser.status}
+                    category="generic"
+                    ariaLabel={`User status: ${selectedUser.status}`}
+                  />
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Registered On</p>

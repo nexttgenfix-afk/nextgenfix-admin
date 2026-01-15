@@ -25,6 +25,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/status-badge"
 import { useToast } from "@/hooks/use-toast"
 import { getTables, createTable, updateTable, deleteTable, bulkCreateTables, getReservations, updateReservationStatus, type Table as TableType, type Reservation } from "@/lib/api/tables"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -302,35 +303,15 @@ export default function TablesPage() {
   }
 
   const getStatusBadge = (status: TableType['status']) => {
-    switch (status) {
-      case 'available':
-        return <Badge className="bg-green-100 text-green-800">Available</Badge>
-      case 'reserved':
-        return <Badge className="bg-yellow-100 text-yellow-800">Reserved</Badge>
-      case 'occupied':
-        return <Badge className="bg-red-100 text-red-800">Occupied</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
+    return <StatusBadge status={status} />
   }
 
   const getReservationStatusBadge = (status: Reservation['status']) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">Pending</Badge>
-      case 'confirmed':
-        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelled</Badge>
-      case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
+    return <StatusBadge status={status} />
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Tables & Reservations</h2>
       </div>

@@ -1,8 +1,7 @@
 "use client"
 
-import { BellIcon, MenuIcon, Search } from "lucide-react"
+import { BellIcon, MenuIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,12 +39,8 @@ export default function Header() {
         <span className="sr-only">Toggle menu</span>
       </Button>
       <div className="flex-1">
-        <div className="relative max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search..." className="w-full bg-background pl-8" />
-        </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="items-center gap-2 flex">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="relative">

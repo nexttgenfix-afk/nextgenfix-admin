@@ -1,13 +1,11 @@
 
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { getCookie } from "@/lib/utils";
+import api from "@/lib/api";
 import { CheckCircle, Clock, CookingPot, Truck, XCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import StatusBadge from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 type OrderStatus = "Ordered" | "Preparing" | "Dispatched" | "Delivered" | "Canceled";
 
@@ -36,20 +34,7 @@ const statusIcon = (status: OrderStatus) => {
   }
 }
 
-const statusColor = (status: OrderStatus) => {
-  switch (status) {
-    case "Ordered":
-      return "bg-blue-100 text-blue-800"
-    case "Preparing":
-      return "bg-yellow-100 text-yellow-800"
-    case "Dispatched":
-      return "bg-purple-100 text-purple-800"
-    case "Delivered":
-      return "bg-green-100 text-green-800"
-    case "Canceled":
-      return "bg-red-100 text-red-800"
-  }
-}
+
 
 
 export function RecentOrders() {
@@ -63,11 +48,7 @@ export function RecentOrders() {
     setError(null);
     const fetchOrders = async () => {
       try {
-        const token = getCookie('adminToken');
-        const res = await axios.get(`${API_BASE_URL}/api/admin/recent-orders`, {
-          withCredentials: true,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await api.get('/admin/recent-orders');
         setOrders(Array.isArray(res.data.orders) ? res.data.orders : []);
       } catch (err) {
         let message = "Failed to load recent orders.";
@@ -93,12 +74,14 @@ export function RecentOrders() {
           <div className="space-y-1">
             <div className="flex items-center">
               <span className="font-medium">{order.id}</span>
-              <Badge className={`ml-2 ${statusColor(order.status as OrderStatus)} border-none`} variant="outline">
-                <span className="flex items-center gap-1">
-                  {statusIcon(order.status as OrderStatus)}
-                  {order.status}
-                </span>
-              </Badge>
+              <StatusBadge
+                status={order.status}
+                category="order"
+                compact
+                className="ml-2"
+                ariaLabel={`Order status: ${order.status}`}
+                icon={statusIcon(order.status as OrderStatus)}
+              />
             </div>
             <div className="text-sm text-muted-foreground">
               User: {order.userId ?? '-'}

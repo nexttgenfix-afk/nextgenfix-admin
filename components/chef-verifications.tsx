@@ -5,11 +5,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CheckCircle, XCircle} from "lucide-react";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { getCookie } from "@/lib/utils";
+import api from "@/lib/api";
 import { useRouter } from "next/navigation";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface ChefVerificationDoc {
   fssai: boolean;
@@ -39,11 +36,7 @@ export function ChefVerifications() {
     setError(null);
     const fetchVerifications = async () => {
       try {
-        const token = getCookie('adminToken');
-        const res = await axios.get(`${API_BASE_URL}/api/admin/chef-verifications`, {
-          withCredentials: true,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await api.get('/admin/chef-verifications');
         setVerifications(res.data.chefs || []);
       } catch (err) {
         let message = "Failed to load chef verifications.";
@@ -62,11 +55,7 @@ export function ChefVerifications() {
   const handleAction = async (id: string, action: "approve" | "reject") => {
     setActionLoading(id + action);
     try {
-      const token = getCookie('adminToken');
-      await axios.put(`${API_BASE_URL}/api/admin/chef-verifications/${id}/${action}`, undefined, {
-        withCredentials: true,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await api.put(`/admin/chef-verifications/${id}/${action}`);
       setVerifications(vs => vs.map(v => v.id === id ? { ...v, status: action === "approve" ? "approved" : "rejected" } : v));
     } catch (err) {
       let message = `Failed to ${action} chef.`;

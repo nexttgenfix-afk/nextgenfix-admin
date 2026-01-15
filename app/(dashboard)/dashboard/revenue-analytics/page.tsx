@@ -130,7 +130,7 @@ export default function RevenueAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Revenue Analytics</h2>
         </div>
@@ -211,7 +211,7 @@ export default function RevenueAnalyticsPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Revenue Analytics</h2>
         <DateRangeSelector period={period} onPeriodChange={(p) => setPeriod(p as TimePeriod)} />

@@ -5,9 +5,7 @@ import { Star, Check, X, ExternalLink } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { getCookie } from "@/lib/utils";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import api from "@/lib/api";
 
 export interface Review {
   id: string;
@@ -59,11 +57,7 @@ export function RecentReviews() {
     setError(null);
     const fetchReviews = async () => {
       try {
-        const token = getCookie('adminToken');
-        const res = await axios.get(`${API_BASE_URL}/api/admin/reviews-pending`, {
-          withCredentials: true,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await api.get('/admin/reviews-pending');
         setReviews(res.data.reviews || []);
       } catch (err) {
         let message = "Failed to load reviews.";
@@ -82,11 +76,7 @@ export function RecentReviews() {
   const handleAction = async (id: string, action: "approve" | "reject") => {
     setActionLoading(id + action);
     try {
-      const token = getCookie('adminToken');
-      await axios.post(`${API_BASE_URL}/api/admin/reviews/${id}/${action}`, undefined, {
-        withCredentials: true,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await api.post(`/admin/reviews/${id}/${action}`);
       setReviews(rs => rs.filter(r => r.id !== id));
     } catch (err) {
       let message = `Failed to ${action} review.`;

@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import StatusBadge from "@/components/status-badge";
 import {
   Select,
   SelectContent,
@@ -802,20 +803,7 @@ export default function MenuItemsPage() {
     }
   };
 
-  const getStatusColor = (status: MenuItem["status"]) => {
-    // Normalize status to lowercase, remove spaces and hyphens for matching
-    const normalized = String(status).toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
-    switch (normalized) {
-      case "available":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "outofstock":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "comingsoon":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+
 
   return (
     <div className="space-y-4">
@@ -986,15 +974,7 @@ export default function MenuItemsPage() {
                   </TableCell>
                   <TableCell>₹{item.price.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={getStatusColor(item.status)}
-                    >
-                      {item.status
-                        .split("-")
-                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(" ")}
-                    </Badge>
+                    <StatusBadge status={item.status} />
                   </TableCell>
                   <TableCell>
                     <span className="text-sm">{item.preparationTime} min</span>
@@ -1194,17 +1174,11 @@ export default function MenuItemsPage() {
 
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge
-                    variant="secondary"
-                    className={getStatusColor(selectedItem.status)}
-                  >
-                    {selectedItem.status
-                      .split("-")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" ")}
-                  </Badge>
+                  <StatusBadge
+                    status={selectedItem.status}
+                    category="generic"
+                    ariaLabel={`Item status: ${selectedItem.status}`}
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -1227,7 +1201,7 @@ export default function MenuItemsPage() {
                   <div className="flex items-center gap-2">
                     {selectedItem.specialOffer?.isSpecial ? (
                       <>
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">⏰ Limited Time Offer</Badge>
+                        <Badge variant="secondary" className="bg-status-warning-100 text-status-warning-800 border-amber-200">⏰ Limited Time Offer</Badge>
                         {selectedItem.specialOffer.validUntil && (
                           <span className="text-xs text-muted-foreground">
                             Ends: {new Date(selectedItem.specialOffer.validUntil).toLocaleDateString('en-GB')}
