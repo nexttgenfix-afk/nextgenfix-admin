@@ -1,5 +1,13 @@
 import apiClient from './client'
 
+export interface ComplaintResponse {
+  adminId: string
+  adminName: string
+  message: string
+  isInternal?: boolean
+  createdAt: string
+}
+
 export interface Complaint {
   _id: string
   complaintId?: string
@@ -13,8 +21,8 @@ export interface Complaint {
   userEmail?: string
   subject: string
   description: string
-  category: string
-  priority: 'Low' | 'Medium' | 'High'
+  category: 'order_issue' | 'delivery_issue' | 'payment_issue' | 'account_issue' | 'technical_issue' | 'menu_issue' | 'general_inquiry' | 'feedback'
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent'
   status: 'Open' | 'In-progress' | 'Resolved' | 'Closed'
   orderId?: string
   attachments?: string[]
@@ -22,15 +30,19 @@ export interface Complaint {
   responses?: ComplaintResponse[]
   response?: string
   respondedAt?: string
+  relatedOrderId?: string
+  assignedTo?: {
+    _id: string
+    name: string
+    email: string
+  }
+  resolvedAt?: string
+  resolvedBy?: string
+  closedAt?: string
+  lastResponseAt?: string
+  tags?: string[]
   createdAt: string
   updatedAt: string
-}
-
-export interface ComplaintResponse {
-  adminId: string
-  adminName: string
-  message: string
-  createdAt: string
 }
 
 export interface ComplaintFilters {
@@ -64,9 +76,13 @@ export const updateComplaintStatus = async (id: string, status: Complaint['statu
   return response.data
 }
 
-export const respondToComplaint = async (id: string, message: string) => {
-  const response = await apiClient.put<Complaint>(`/complaints/${id}/respond`, { message })
+export const addComplaintResponse = async (id: string, message: string, isInternal?: boolean) => {
+  const response = await apiClient.post<Complaint>(`/complaints/${id}/respond`, { message, isInternal })
   return response.data
+}
+
+export const respondToComplaint = async (id: string, message: string) => {
+  return addComplaintResponse(id, message, false)
 }
 
 export const createComplaint = async (data: Partial<Complaint>) => {
@@ -82,6 +98,26 @@ export const updateComplaint = async (id: string, data: Partial<Complaint>) => {
 export const deleteComplaint = async (id: string) => {
   const response = await apiClient.delete(`/complaints/admin/${id}`)
   return response.data
+}
+
+export const assignComplaint = async (id: string, adminId: string) => {
+  const response = await apiClient.put<Complaint>(`/complaints/${id}/assign`, { adminId })
+  return response.data
+}
+
+export interface ComplaintStats {
+  total: number
+  openComplaints: number
+  resolvedComplaints: number
+  byStatus: { [key: string]: number }
+  byCategory: { [key: string]: number }
+  byPriority: { [key: string]: number }
+  avgResolutionTimeHours: number
+}
+
+export const getComplaintStats = async () => {
+  const response = await apiClient.get<{ success: boolean; data: ComplaintStats }>('/complaints/stats')
+  return response.data.data
 }
 
 export const exportComplaints = async (filters?: ComplaintFilters) => {

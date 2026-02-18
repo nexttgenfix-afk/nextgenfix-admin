@@ -22,8 +22,16 @@ export interface User {
   }
   referralCode: string
   referredBy?: string
+  referralCount?: number
   isActive: boolean
   createdAt: string | Date
+  calorieGoal?: number
+  preferences?: {
+    allergens?: string[]
+    dietaryPreferences?: string[]
+    eatingHabits?: string[]
+    spiceLevel?: string
+  }
 }
 
 export interface MenuItem {
@@ -40,7 +48,7 @@ export interface MenuItem {
   }
   preparationTime?: number
   recommendedItems: string[]
-  moodTag?: 'good' | 'angry' | 'in_love' | 'sad' | null
+  moodTag?: 'locked_in' | 'bougie' | 'homesick' | 'burnt_tf_out' | 'need_a_hug' | null
   hungerLevelTag?: 'little_hungry' | 'quite_hungry' | 'very_hungry' | 'super_hungry' | null
   isAvailable: boolean
   isVegetarian: boolean
@@ -55,7 +63,7 @@ export interface OrderItem {
 export interface Order {
   _id: string
   userId: string
-  type: 'scheduled' | 'dining'
+  type: 'delivery' | 'take_away' | 'car'
   items: OrderItem[]
   subtotal: number
   tierDiscount: number
