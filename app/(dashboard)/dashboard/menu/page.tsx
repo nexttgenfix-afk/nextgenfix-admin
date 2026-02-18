@@ -71,7 +71,7 @@ export interface MenuItem {
   imageUrl?: string;
   images?: string[];
   tags: string[];
-  moodTag?: "good" | "angry" | "in_love" | "sad" | null;
+  moodTag?: "locked_in" | "bougie" | "homesick" | "burnt_tf_out" | "need_a_hug" | null;
   hungerLevelTag?: "little_hungry" | "quite_hungry" | "very_hungry" | "super_hungry" | null;
   recommendedItems?: string[];
   specialOffer?: {
@@ -1465,10 +1465,11 @@ export default function MenuItemsPage() {
                     <SelectValue placeholder="Select mood" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="good">Good</SelectItem>
-                    <SelectItem value="angry">Angry</SelectItem>
-                    <SelectItem value="in_love">In Love</SelectItem>
-                    <SelectItem value="sad">Sad</SelectItem>
+                    <SelectItem value="locked_in">Locked In</SelectItem>
+                    <SelectItem value="bougie">Bougie</SelectItem>
+                    <SelectItem value="homesick">Homesick</SelectItem>
+                    <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
+                    <SelectItem value="need_a_hug">Need a Hug</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1975,10 +1976,11 @@ export default function MenuItemsPage() {
                   <SelectValue placeholder="Select mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="angry">Angry</SelectItem>
-                  <SelectItem value="in_love">In Love</SelectItem>
-                  <SelectItem value="sad">Sad</SelectItem>
+                  <SelectItem value="locked_in">Locked In</SelectItem>
+                  <SelectItem value="bougie">Bougie</SelectItem>
+                  <SelectItem value="homesick">Homesick</SelectItem>
+                  <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
+                  <SelectItem value="need_a_hug">Need a Hug</SelectItem>
                 </SelectContent>
               </Select>
             </div>

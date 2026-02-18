@@ -23,6 +23,8 @@ export * as settings from './settings'
 export * as admins from './admins'
 export * as adminUsers from './admin-users'
 export * as combos from './combos'
+export * as wallet from './wallet'
+export * as faqs from './faqs'
 
 // Export commonly used types from analytics
 export type {

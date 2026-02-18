@@ -52,3 +52,38 @@ export const exportMenuItems = async (filters?: MenuItemFilters) => {
   })
   return response.data
 }
+
+/**
+ * Upload promotional video to menu item
+ * @param menuItemId - The menu item ID
+ * @param videoFile - The video file to upload
+ */
+export const uploadMenuItemVideo = async (menuItemId: string, videoFile: File) => {
+  const formData = new FormData()
+  formData.append('video', videoFile)
+
+  const response = await apiClient.post<{
+    success: boolean
+    message: string
+    data: { videoUrl: string; thumbnailUrl: string; menuItem: MenuItem }
+  }>(`/admin/menu-items/${menuItemId}/video`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 180000, // 3 minutes for video uploads
+  })
+
+  return response.data
+}
+
+/**
+ * Delete promotional video from menu item
+ * @param menuItemId - The menu item ID
+ */
+export const deleteMenuItemVideo = async (menuItemId: string) => {
+  const response = await apiClient.delete<{
+    success: boolean
+    message: string
+    data: { menuItem: MenuItem }
+  }>(`/admin/menu-items/${menuItemId}/video`)
+
+  return response.data
+}

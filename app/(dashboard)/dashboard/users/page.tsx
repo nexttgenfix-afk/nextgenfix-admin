@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { MoreHorizontal, Search, Download, RefreshCw, Eye, Edit, Trash2 } from "lucide-react"
+import { MoreHorizontal, Search, Download, RefreshCw, Eye, Edit, Trash2, Copy, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import * as usersApi from "@/lib/api/users"
+import type { UserLocation } from "@/lib/api/users"
 import type { User as BaseUser } from "@/lib/types"
 
 interface User extends BaseUser {
@@ -38,7 +39,9 @@ interface User extends BaseUser {
   eatingPreference?: string
   status?: "Active" | "Inactive"
   totalOrders?: number
-  password?: string
+  calorieGoal?: number
+  allergens?: string
+  referredByCode?: string
 }
 
 const getErrorMessage = (err: unknown, defaultMessage: string): string => {
@@ -103,7 +106,9 @@ export default function UsersPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addDialoggOpen, setAddDialogOpen] = useState(false);
-  const [newUserData, setNewUserData] = useState<Partial<User>>({ password: "" });
+  const [newUserData, setNewUserData] = useState<Partial<User>>({});
+  const [userAddresses, setUserAddresses] = useState<UserLocation[]>([]);
+  const [cancelledOrderCount, setCancelledOrderCount] = useState(0);
   const { toast } = useToast();
 
   // Sync filters to URL
@@ -156,8 +161,15 @@ export default function UsersPage() {
     try {
       const res = await usersApi.getUserById(userId);
       setSelectedUser(res);
-      console.log("Selected User:", res);
       setViewDialogOpen(true);
+      // Fetch addresses and cancelled orders in parallel
+      Promise.all([
+        usersApi.getUserAddresses(userId).catch(() => []),
+        usersApi.getUserCancelledOrders(userId).catch(() => []),
+      ]).then(([addresses, cancelled]) => {
+        setUserAddresses(addresses);
+        setCancelledOrderCount(cancelled.length);
+      });
     } catch (err) {
       const errorMessage = getErrorMessage(err, "Failed to fetch user details.");
       toast({ title: "Error", description: errorMessage });
@@ -238,10 +250,14 @@ export default function UsersPage() {
         <Button onClick={() => {
           setSelectedUser(null);
           setNewUserData({
-            name: "", email: "", phone: "", password: "",
-            dietPreference: "none", // Use 'none' for initial value
-            eatingPreference: "none", // Use 'none' for initial value
-            status: "Active"
+            name: "", email: "", phone: "",
+            dietPreference: "none",
+            eatingPreference: "none",
+            status: "Active",
+            tier: "bronze",
+            calorieGoal: undefined,
+            allergens: "",
+            referredByCode: "",
           });
           setAddDialogOpen(true);
         }}>Add User</Button>
@@ -463,7 +479,7 @@ export default function UsersPage() {
 
       {/* View User Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>Detailed information about the selected user.</DialogDescription>
@@ -484,19 +500,15 @@ export default function UsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm">{selectedUser.email}</p>
+                  <p className="text-sm">{selectedUser.email || "N/A"}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Phone</p>
-                  <p className="text-sm">{selectedUser.phone}</p>
+                  <p className="text-sm">{selectedUser.phone || "N/A"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Food Preference</p>
-                  <p className="text-sm">{selectedUser.dietPreference}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Eating Preference</p>
-                  <p className="text-sm">{selectedUser.eatingPreference}</p>
+                  <p className="text-sm font-medium">Tier</p>
+                  {getTierBadge(selectedUser.tier)}
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Status</p>
@@ -507,8 +519,24 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="space-y-1">
+                  <p className="text-sm font-medium">Food Preference</p>
+                  <p className="text-sm">{selectedUser.dietPreference || "N/A"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Eating Preference</p>
+                  <p className="text-sm">{selectedUser.eatingPreference || "N/A"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Total Orders</p>
+                  <p className="text-sm">{selectedUser.totalOrders ?? 0}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Cancelled Orders</p>
+                  <p className="text-sm">{cancelledOrderCount}</p>
+                </div>
+                <div className="space-y-1">
                   <p className="text-sm font-medium">Registered On</p>
-                    <p className="text-sm">
+                  <p className="text-sm">
                     {selectedUser.createdAt
                       ? new Date(selectedUser.createdAt).toLocaleString(undefined, {
                         year: "numeric",
@@ -518,12 +546,64 @@ export default function UsersPage() {
                         minute: "2-digit",
                       })
                       : "N/A"}
-                    </p>
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Total Orders</p>
-                  <p className="text-sm">{selectedUser.totalOrders}</p>
+              </div>
+
+              {/* Referral Info */}
+              <div className="border-t pt-3">
+                <p className="text-sm font-semibold mb-2">Referral Info</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Referral Code</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm font-mono">{(selectedUser as unknown as { referralCode?: string }).referralCode || "N/A"}</p>
+                      {(selectedUser as unknown as { referralCode?: string }).referralCode && (
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                          navigator.clipboard.writeText((selectedUser as unknown as { referralCode?: string }).referralCode || "");
+                          toast({ title: "Copied", description: "Referral code copied to clipboard." });
+                        }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Referral Count</p>
+                    <p className="text-sm">{(selectedUser as unknown as { referralCount?: number }).referralCount ?? 0}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Referred By</p>
+                    <p className="text-sm">{(selectedUser as unknown as { referredBy?: string }).referredBy || "N/A"}</p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Addresses */}
+              <div className="border-t pt-3">
+                <p className="text-sm font-semibold mb-2">
+                  <MapPin className="inline h-4 w-4 mr-1" />
+                  Saved Addresses ({userAddresses.length})
+                </p>
+                {userAddresses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No saved addresses.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {userAddresses.map((addr) => (
+                      <div key={addr._id} className="rounded-md border p-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{addr.saveAs || "Other"}</Badge>
+                          {addr.isDefault && <Badge className="text-xs bg-green-100 text-green-800 border-green-200">Default</Badge>}
+                          {addr.label && <span className="font-medium">{addr.label}</span>}
+                        </div>
+                        <p className="mt-1 text-muted-foreground">
+                          {addr.formattedAddress || [addr.flatNumber, addr.addressComponents?.street, addr.addressComponents?.city, addr.addressComponents?.state, addr.addressComponents?.postalCode].filter(Boolean).join(", ") || "No address details"}
+                        </p>
+                        {addr.landmark && <p className="text-xs text-muted-foreground">Landmark: {addr.landmark}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -664,8 +744,29 @@ export default function UsersPage() {
               <Input id="newPhone" value={newUserData.phone || ""} className="col-span-3" onChange={(e) => setNewUserData({...newUserData, phone: e.target.value})} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="newPassword" className="text-right">Password</Label>
-              <Input id="newPassword" type="password" value={newUserData.password || ""} className="col-span-3" onChange={(e) => setNewUserData({...newUserData, password: e.target.value})} />
+              <Label htmlFor="newTier" className="text-right">Tier</Label>
+              <Select value={newUserData.tier || "bronze"} onValueChange={(value: string) => setNewUserData({...newUserData, tier: value as "bronze" | "silver" | "gold"})}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bronze">Bronze</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="gold">Gold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newCalorieGoal" className="text-right">Calorie Goal</Label>
+              <Input id="newCalorieGoal" type="number" placeholder="e.g., 2000" value={newUserData.calorieGoal || ""} className="col-span-3" onChange={(e) => setNewUserData({...newUserData, calorieGoal: e.target.value ? Number(e.target.value) : undefined})} />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newAllergens" className="text-right">Food Allergies</Label>
+              <Input id="newAllergens" placeholder="Comma-separated, e.g., nuts, dairy" value={newUserData.allergens || ""} className="col-span-3" onChange={(e) => setNewUserData({...newUserData, allergens: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newReferralCode" className="text-right">Referral Code</Label>
+              <Input id="newReferralCode" placeholder="Referrer's code" value={newUserData.referredByCode || ""} className="col-span-3" onChange={(e) => setNewUserData({...newUserData, referredByCode: e.target.value})} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Status</Label>

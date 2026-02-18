@@ -32,6 +32,10 @@ export interface Order {
   deliveryAddress: string
   paymentMethod: string
   paymentStatus: "Paid" | "Pending" | "Failed" | "Refunded"
+  orderType?: string
+  deliveryInstructions?: string
+  cookingInstructions?: string
+  scheduledTime?: string
 }
 
  interface ApiOrderItem {
@@ -61,6 +65,10 @@ export interface Order {
       method?: string;
       status?: string;
     };
+    orderType?: string;
+    deliveryInstructions?: string;
+    cookingInstructions?: string;
+    scheduledTime?: string;
   }
 
 // Define allowed order status values
@@ -82,13 +90,14 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [orderTypeFilter, setOrderTypeFilter] = useState("all")
   const { toast } = useToast();
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get<{ message: string; success: boolean; orders: ApiOrder[] }>(
-        '/orders/admin/all',
+        '/admin/all-orders',
         {
           params: {
             search: searchQuery || undefined,
@@ -158,9 +167,17 @@ export default function OrdersPage() {
               : (o.paymentDetails?.status || o.paymentStatus || "Pending").toLowerCase() === "failed"
               ? "Failed"
               : "Pending") as "Paid" | "Pending" | "Failed" | "Refunded",
+          orderType: o.orderType || undefined,
+          deliveryInstructions: o.deliveryInstructions || undefined,
+          cookingInstructions: o.cookingInstructions || undefined,
+          scheduledTime: o.scheduledTime ? new Date(o.scheduledTime).toLocaleString() : undefined,
         };
       });
-      setOrders(mappedOrders);
+      // Client-side filter by order type
+      const filtered = orderTypeFilter !== 'all'
+        ? mappedOrders.filter(o => o.orderType === orderTypeFilter)
+        : mappedOrders;
+      setOrders(filtered);
     } catch (err) {
       const errorMessage = getErrorMessage(err, "Failed to fetch orders.");
       console.error('Error fetching orders:', err);
@@ -184,7 +201,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, statusFilter, toast]);
+  }, [searchQuery, statusFilter, orderTypeFilter, toast]);
 
   useEffect(() => {
     fetchOrders()
@@ -291,6 +308,17 @@ export default function OrdersPage() {
               <SelectItem value="canceled">Canceled</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={orderTypeFilter} onValueChange={(value: string) => setOrderTypeFilter(value)}>
+            <SelectTrigger className="h-8 w-[150px]">
+              <SelectValue placeholder="Order Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="take_away">Take Away</SelectItem>
+              <SelectItem value="car">Car</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -301,11 +329,12 @@ export default function OrdersPage() {
             <TableCell>User</TableCell>
             <TableCell>Items</TableCell>
             <TableCell>Total</TableCell>
+            <TableCell>Type</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Ordered At</TableCell>
+            <TableCell>Scheduled</TableCell>
             <TableCell>Delivery Address</TableCell>
-            <TableCell>Payment Method</TableCell>
-            <TableCell>Payment Status</TableCell>
+            <TableCell>Payment</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHeader>
@@ -336,6 +365,11 @@ export default function OrdersPage() {
               </TableCell>
               <TableCell>{order.totalPrice}</TableCell>
               <TableCell>
+                <Badge variant="outline" className="text-xs">
+                  {order.orderType ? order.orderType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "-"}
+                </Badge>
+              </TableCell>
+              <TableCell>
                 <StatusBadge
                   status={order.status}
                   category="order"
@@ -344,15 +378,28 @@ export default function OrdersPage() {
                 />
               </TableCell>
               <TableCell>{order.orderTimestamp}</TableCell>
-              <TableCell>{order.deliveryAddress}</TableCell>
-              <TableCell>{order.paymentMethod}</TableCell>
+              <TableCell>{order.scheduledTime || "-"}</TableCell>
               <TableCell>
-                <StatusBadge
-                  status={order.paymentStatus}
-                  category="payment"
-                  compact
-                  ariaLabel={`Payment status: ${order.paymentStatus}`}
-                />
+                <div>
+                  <span className="text-sm">{order.deliveryAddress}</span>
+                  {order.deliveryInstructions && (
+                    <p className="text-xs text-muted-foreground mt-1">Delivery: {order.deliveryInstructions}</p>
+                  )}
+                  {order.cookingInstructions && (
+                    <p className="text-xs text-muted-foreground">Cooking: {order.cookingInstructions}</p>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs">{order.paymentMethod}</span>
+                  <StatusBadge
+                    status={order.paymentStatus}
+                    category="payment"
+                    compact
+                    ariaLabel={`Payment status: ${order.paymentStatus}`}
+                  />
+                </div>
               </TableCell>
               <TableCell>
                 <DropdownMenu>

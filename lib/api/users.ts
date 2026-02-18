@@ -50,3 +50,35 @@ export const exportUsers = async (filters?: UserFilters) => {
   })
   return response.data
 }
+
+export interface UserLocation {
+  _id: string
+  label?: string
+  saveAs?: string
+  formattedAddress?: string
+  flatNumber?: string
+  landmark?: string
+  addressComponents?: {
+    street?: string
+    city?: string
+    state?: string
+    postalCode?: string
+    country?: string
+  }
+  isDefault?: boolean
+}
+
+export const getUserAddresses = async (userId: string) => {
+  const response = await apiClient.get<{ success: boolean; locations: UserLocation[] }>(`/admin/users/${userId}/locations`)
+  return response.data.locations
+}
+
+export const getUserCancelledOrders = async (userId: string) => {
+  const response = await apiClient.get<{ success: boolean; orders: unknown[] }>(`/admin/users/${userId}/cancelled-orders`)
+  return response.data.orders
+}
+
+export const getAbandonedCarts = async () => {
+  const response = await apiClient.get<{ success: boolean; carts: unknown[]; total: number }>('/admin/carts/abandoned')
+  return response.data
+}
