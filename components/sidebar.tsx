@@ -9,7 +9,6 @@ import {
   ShoppingBag,
   Users,
   UserPlus,
-  AlertCircle,
   FileText,
   Gift,
   Ticket,
@@ -23,6 +22,8 @@ import {
   Package,
   Heart,
   CircleDashed,
+  Wallet,
+  HelpCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -132,9 +133,14 @@ export default function Sidebar() {
       icon: <UserPlus className="h-5 w-5" />,
     },
     {
-      title: "Complaints",
+      title: "Help & Support",
       href: "/dashboard/complaints",
-      icon: <AlertCircle className="h-5 w-5" />,
+      icon: <HelpCircle className="h-5 w-5" />,
+    },
+    {
+      title: "Wallet",
+      href: "/dashboard/wallet",
+      icon: <Wallet className="h-5 w-5" />,
     },
     // {
     //   title: "Tables",
