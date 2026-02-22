@@ -152,7 +152,8 @@ export default function DashboardPage() {
     };
 
     fetchAnalytics();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -220,7 +221,7 @@ export default function DashboardPage() {
         />
         <KPICard
           title="Total Revenue"
-          value={`₹${(analytics.orders.totalRevenue || 0).toLocaleString()}`}
+          value={`₹${(analytics.revenue.totalRevenue || 0).toLocaleString()}`}
           description={`Net: ₹${(analytics.revenue.netRevenue || 0).toLocaleString()}`}
         />
         <KPICard
@@ -253,9 +254,9 @@ export default function DashboardPage() {
           description="New/Returning users"
         />
         <KPICard
-          title="Avg Order Value"
-          value={`₹${(analytics.revenue.avgOrderValue || 0).toFixed(0)}`}
-          description={`₹${(analytics.revenue.totalDiscounts || 0).toLocaleString()} in discounts`}
+          title="Total Discounts"
+          value={`₹${(analytics.revenue.totalDiscounts || 0).toLocaleString()}`}
+          description="Discounts applied this period"
         />
       </div>
 

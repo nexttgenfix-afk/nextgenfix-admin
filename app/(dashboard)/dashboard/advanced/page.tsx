@@ -132,10 +132,58 @@ export default function AdvancedAnalyticsPage() {
             api.get(`/admin/analytics/advanced/time-to-second-order?period=${period}`)
           ]);
 
-        setLtvData(ltvResponse.data.data);
-        setGenderTrendsData(genderTrendsResponse.data.data);
-        setHighValueCustomersData(highValueResponse.data.data);
-        setTimeToSecondOrderData(timeToSecondResponse.data.data);
+        // Map LTV response to expected state shape
+        const ltvApiData = ltvResponse.data.data || {};
+        const ltvBreakdown = ltvResponse.data.breakdown || {};
+        setLtvData({
+          averageLTV: ltvApiData.avgLTV || 0,
+          totalLTV: (ltvApiData.avgLTV || 0) * (ltvApiData.totalCustomers || 0),
+          ltvBySegment: (ltvBreakdown.byTier || []).map((t: { tier: string; avgLTV: number; customers: number }) => ({
+            segment: t.tier || 'Unknown',
+            ltv: t.avgLTV || 0,
+            customerCount: t.customers || 0
+          })),
+          ltvDistribution: ltvApiData.ltvDistribution || []
+        });
+
+        // Gender trends data already has the right shape
+        setGenderTrendsData({
+          genderItemMatrix: genderTrendsResponse.data.data?.genderItemMatrix || [],
+          dayPartPreferences: genderTrendsResponse.data.data?.dayPartPreferences || []
+        });
+
+        // Map high-value customers response (metrics in data, topCustomers in breakdown)
+        const hvData = highValueResponse.data.data || {};
+        const hvBreakdown = highValueResponse.data.breakdown || {};
+        setHighValueCustomersData({
+          topCustomers: (hvBreakdown.topCustomers || []).map((c: { userId: string; name: string; totalRevenue: number; orderCount: number; avgOrderValue: number }) => ({
+            customerId: c.userId,
+            name: c.name || 'Unknown',
+            totalSpent: c.totalRevenue || 0,
+            orderCount: c.orderCount || 0,
+            avgOrderValue: c.avgOrderValue || 0,
+            lastOrderDate: ''
+          })),
+          paretoData: [],
+          top10Share: hvData.top10Share || 0,
+          top20Share: hvData.top20Share || 0,
+          avgRevenuePerCustomer: hvData.avgRevenuePerCustomer || 0
+        });
+
+        // Map time-to-second-order: distribution is an object in breakdown, needs to be an array
+        const t2Data = timeToSecondResponse.data.data || {};
+        const t2Breakdown = timeToSecondResponse.data.breakdown || {};
+        const t2DistObj: Record<string, number> = t2Breakdown.distribution || {};
+        const t2PctObj: Record<string, number> = t2Breakdown.distributionPercentage || {};
+        setTimeToSecondOrderData({
+          averageTime: t2Data.avgDaysToSecondOrder || 0,
+          distribution: Object.entries(t2DistObj).map(([range, count]) => ({
+            range,
+            count: count as number,
+            percentage: t2PctObj[range] || 0
+          })),
+          conversionRate: 0
+        });
         // Fetch subscription analytics (if backend supports it)
         try {
           const subsResponse = await api.get(`/admin/analytics/advanced/subscriptions?period=${period}`);
