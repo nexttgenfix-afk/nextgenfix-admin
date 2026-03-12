@@ -24,6 +24,7 @@ import {
   CircleDashed,
   Wallet,
   HelpCircle,
+  ImagePlay,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -116,6 +117,11 @@ export default function Sidebar() {
       title: "Combo Offers",
       href: "/dashboard/combos",
       icon: <Gift className="h-5 w-5" />,
+    },
+    {
+      title: "Banners",
+      href: "/dashboard/banners",
+      icon: <ImagePlay className="h-5 w-5" />,
     },
     {
       title: "Coupons",
