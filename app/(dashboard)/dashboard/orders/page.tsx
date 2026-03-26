@@ -209,7 +209,7 @@ export default function OrdersPage() {
 
   const handleViewOrder = async (orderId: string) => {
     try {
-  await api.get(`/orders/${orderId}`);
+  await api.get(`/admin/orders/${orderId}`);
       // TODO: Implement order details dialog
       toast({ title: "Order details fetched", description: `Order ${orderId} details loaded.` });
     } catch (err) {
@@ -231,7 +231,7 @@ export default function OrdersPage() {
       const mappedStatus = (statusMap as any)[newStatus] || newStatus.toLowerCase();
 
       await api.put(
-        `/orders/${orderId}/status`,
+        `/admin/orders/${orderId}`,
         { status: mappedStatus, paymentStatus: newPaymentStatus }
       );
       toast({ title: "Order updated!", description: `Order ${orderId} status updated to ${newStatus}.` });

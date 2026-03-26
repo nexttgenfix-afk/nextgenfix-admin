@@ -81,6 +81,11 @@ export interface MenuItem {
     specialPrice?: number;
     description?: string;
   };
+  seasonal?: {
+    isSeasonSpecial: boolean;
+    seasonalFrom?: string;
+    seasonalUntil?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -127,6 +132,11 @@ export default function MenuItemsPage() {
       isSpecial: false,
       validFrom: "",
       validUntil: "",
+    },
+    seasonal: {
+      isSeasonSpecial: false,
+      seasonalFrom: "",
+      seasonalUntil: "",
     },
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -222,6 +232,7 @@ export default function MenuItemsPage() {
                   : [],
               images: Array.isArray(obj.images) ? obj.images as string[] : [],
               specialOffer: obj.specialOffer as MenuItem["specialOffer"],
+              seasonal: obj.seasonal as MenuItem["seasonal"],
               createdAt: obj.createdAt as string,
               updatedAt: obj.updatedAt as string,
             };
@@ -321,6 +332,7 @@ export default function MenuItemsPage() {
           : [],
         images: images,
         specialOffer: data.specialOffer,
+        seasonal: data.seasonal,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       };
@@ -387,7 +399,12 @@ export default function MenuItemsPage() {
         if (selectedItem.specialOffer) {
           formData.append('specialOffer', JSON.stringify(selectedItem.specialOffer));
         }
-        
+
+        // Handle seasonal
+        if (selectedItem.seasonal) {
+          formData.append('seasonal', JSON.stringify(selectedItem.seasonal));
+        }
+
         // Add image files
         selectedImages.forEach((file) => {
           formData.append('images', file);
@@ -430,7 +447,11 @@ export default function MenuItemsPage() {
         if (selectedItem.specialOffer !== undefined) {
           payload.specialOffer = selectedItem.specialOffer;
         }
-        
+
+        if (selectedItem.seasonal !== undefined) {
+          payload.seasonal = selectedItem.seasonal;
+        }
+
         await menuApi.updateMenuItem(selectedItem.id, payload);
       }
       
@@ -705,6 +726,11 @@ export default function MenuItemsPage() {
         formData.append('specialOffer', JSON.stringify(newItemData.specialOffer));
       }
 
+      // Handle seasonal
+      if (newItemData.seasonal) {
+        formData.append('seasonal', JSON.stringify(newItemData.seasonal));
+      }
+
       // Append image files
       selectedImages.forEach((file) => {
         formData.append('images', file);
@@ -733,6 +759,11 @@ export default function MenuItemsPage() {
           validUntil: "",
           specialPrice: 0,
           description: "",
+        },
+        seasonal: {
+          isSeasonSpecial: false,
+          seasonalFrom: "",
+          seasonalUntil: "",
         },
       });
       setSelectedImages([]);
@@ -962,7 +993,11 @@ export default function MenuItemsPage() {
                     <Badge variant="outline">{categories.find(cat => cat._id === item.category)?.name || item.category}</Badge>
                   </TableCell>
                   <TableCell>
-                    {item.specialOffer?.isSpecial ? (
+                    {item.seasonal?.isSeasonSpecial ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                        🌿 Seasonal
+                      </Badge>
+                    ) : item.specialOffer?.isSpecial ? (
                       <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
                         ⏰ Limited
                       </Badge>
@@ -1215,9 +1250,27 @@ export default function MenuItemsPage() {
                 </div>
 
                 <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Season Special</p>
+                  <div className="flex items-center gap-2">
+                    {selectedItem.seasonal?.isSeasonSpecial ? (
+                      <>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">🌿 Season Special</Badge>
+                        {selectedItem.seasonal.seasonalFrom && selectedItem.seasonal.seasonalUntil && (
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(selectedItem.seasonal.seasonalFrom).toLocaleDateString('en-GB')} – {new Date(selectedItem.seasonal.seasonalUntil).toLocaleDateString('en-GB')}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <Badge variant="outline">Not Seasonal</Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Mood Tag</p>
                   <Badge variant="outline">
-                    {selectedItem.moodTag 
+                    {selectedItem.moodTag
                       ? selectedItem.moodTag.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                       : 'Not Set'}
                   </Badge>
@@ -1492,6 +1545,54 @@ export default function MenuItemsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-isSeasonSpecial" className="text-right">
+                  Season Special
+                </Label>
+                <div className="col-span-3 flex items-center gap-2">
+                  <Checkbox
+                    id="edit-isSeasonSpecial"
+                    checked={selectedItem.seasonal?.isSeasonSpecial || false}
+                    onCheckedChange={(checked) => setSelectedItem({
+                      ...selectedItem,
+                      seasonal: {
+                        isSeasonSpecial: checked === true,
+                        seasonalFrom: selectedItem.seasonal?.seasonalFrom || "",
+                        seasonalUntil: selectedItem.seasonal?.seasonalUntil || "",
+                      }
+                    })}
+                  />
+                  <span className="text-sm text-muted-foreground">Mark as season special item</span>
+                </div>
+              </div>
+              {selectedItem.seasonal?.isSeasonSpecial && (
+                <>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Season From</Label>
+                    <Input
+                      type="date"
+                      className="col-span-3"
+                      value={selectedItem.seasonal?.seasonalFrom ? new Date(selectedItem.seasonal.seasonalFrom).toISOString().split('T')[0] : ""}
+                      onChange={(e) => setSelectedItem({
+                        ...selectedItem,
+                        seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalFrom: e.target.value }
+                      })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Season Until</Label>
+                    <Input
+                      type="date"
+                      className="col-span-3"
+                      value={selectedItem.seasonal?.seasonalUntil ? new Date(selectedItem.seasonal.seasonalUntil).toISOString().split('T')[0] : ""}
+                      onChange={(e) => setSelectedItem({
+                        ...selectedItem,
+                        seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalUntil: e.target.value }
+                      })}
+                    />
+                  </div>
+                </>
+              )}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-description" className="text-right">
                   Description
@@ -2000,6 +2101,53 @@ export default function MenuItemsPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="isSeasonSpecial" className="text-right">
+                Season Special
+              </Label>
+              <div className="col-span-3 flex items-center gap-2">
+                <Checkbox
+                  id="isSeasonSpecial"
+                  checked={(newItemData.seasonal as any)?.isSeasonSpecial || false}
+                  onCheckedChange={(checked) => setNewItemData({
+                    ...newItemData,
+                    seasonal: {
+                      ...(newItemData.seasonal as any),
+                      isSeasonSpecial: checked === true,
+                    }
+                  })}
+                />
+                <span className="text-sm text-muted-foreground">Mark as season special item</span>
+              </div>
+            </div>
+            {((newItemData.seasonal as any)?.isSeasonSpecial) && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Season From</Label>
+                  <Input
+                    type="date"
+                    className="col-span-3"
+                    value={(newItemData.seasonal as any)?.seasonalFrom || ""}
+                    onChange={(e) => setNewItemData({
+                      ...newItemData,
+                      seasonal: { ...(newItemData.seasonal as any), seasonalFrom: e.target.value }
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Season Until</Label>
+                  <Input
+                    type="date"
+                    className="col-span-3"
+                    value={(newItemData.seasonal as any)?.seasonalUntil || ""}
+                    onChange={(e) => setNewItemData({
+                      ...newItemData,
+                      seasonal: { ...(newItemData.seasonal as any), seasonalUntil: e.target.value }
+                    })}
+                  />
+                </div>
+              </>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Description <span className="text-red-500">*</span>
