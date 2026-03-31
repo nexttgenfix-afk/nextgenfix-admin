@@ -52,6 +52,16 @@ import { useToast } from "@/hooks/use-toast";
 import * as menuApi from "@/lib/api/menu";
 import * as categoriesApi from "@/lib/api/categories";
 
+export interface NutritionInfo {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sugar: number;
+  servingSize: string;
+}
+
 export interface MenuItem {
   id: string;
   isVeg?: boolean;
@@ -65,6 +75,7 @@ export interface MenuItem {
   cuisine: string;
   dietaryInfo: string[];
   allergens?: string[];
+  nutritionInfo?: NutritionInfo;
   status: "available" | "out-of-stock" | "coming-soon";
   preparationTime: number;
   rating: number;
@@ -128,6 +139,15 @@ export default function MenuItemsPage() {
     allergens: [],
     recommendedItems: [],
     images: [],
+    nutritionInfo: {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      servingSize: "1 serving",
+    },
     specialOffer: {
       isSpecial: false,
       validFrom: "",
@@ -331,6 +351,17 @@ export default function MenuItemsPage() {
             )
           : [],
         images: images,
+        nutritionInfo: data.nutritionInfo
+          ? {
+              calories: Number(data.nutritionInfo.calories) || 0,
+              protein: Number(data.nutritionInfo.protein) || 0,
+              carbs: Number(data.nutritionInfo.carbs) || 0,
+              fat: Number(data.nutritionInfo.fat) || 0,
+              fiber: Number(data.nutritionInfo.fiber) || 0,
+              sugar: Number(data.nutritionInfo.sugar) || 0,
+              servingSize: data.nutritionInfo.servingSize || "1 serving",
+            }
+          : undefined,
         specialOffer: data.specialOffer,
         seasonal: data.seasonal,
         createdAt: data.createdAt,
@@ -395,6 +426,11 @@ export default function MenuItemsPage() {
           formData.append('recommendedItems', JSON.stringify(selectedItem.recommendedItems));
         }
 
+        // Handle nutritionInfo
+        if (selectedItem.nutritionInfo) {
+          formData.append('nutritionInfo', JSON.stringify(selectedItem.nutritionInfo));
+        }
+
         // Handle specialOffer
         if (selectedItem.specialOffer) {
           formData.append('specialOffer', JSON.stringify(selectedItem.specialOffer));
@@ -442,6 +478,10 @@ export default function MenuItemsPage() {
         }
         if (selectedItem.recommendedItems !== undefined) {
           payload.recommendedItems = selectedItem.recommendedItems;
+        }
+
+        if (selectedItem.nutritionInfo !== undefined) {
+          payload.nutritionInfo = selectedItem.nutritionInfo;
         }
 
         if (selectedItem.specialOffer !== undefined) {
@@ -721,6 +761,11 @@ export default function MenuItemsPage() {
         formData.append('recommendedItems', JSON.stringify(newItemData.recommendedItems));
       }
 
+      // Handle nutritionInfo
+      if (newItemData.nutritionInfo) {
+        formData.append('nutritionInfo', JSON.stringify(newItemData.nutritionInfo));
+      }
+
       // Handle specialOffer
       if (newItemData.specialOffer) {
         formData.append('specialOffer', JSON.stringify(newItemData.specialOffer));
@@ -735,7 +780,7 @@ export default function MenuItemsPage() {
       selectedImages.forEach((file) => {
         formData.append('images', file);
       });
-      
+
       await menuApi.createMenuItem(formData);
       
       const addedItemName = newItemData.name;
@@ -753,6 +798,15 @@ export default function MenuItemsPage() {
         allergens: [],
         recommendedItems: [],
         images: [],
+        nutritionInfo: {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0,
+          sugar: 0,
+          servingSize: "1 serving",
+        },
         specialOffer: {
           isSpecial: false,
           validFrom: "",
@@ -1285,6 +1339,28 @@ export default function MenuItemsPage() {
                   </Badge>
                 </div>
 
+                {selectedItem.nutritionInfo && (
+                  <div className="col-span-2 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Nutrition Info</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: "Calories", value: `${selectedItem.nutritionInfo.calories} kcal` },
+                        { label: "Protein", value: `${selectedItem.nutritionInfo.protein}g` },
+                        { label: "Carbs", value: `${selectedItem.nutritionInfo.carbs}g` },
+                        { label: "Fat", value: `${selectedItem.nutritionInfo.fat}g` },
+                        { label: "Fiber", value: `${selectedItem.nutritionInfo.fiber}g` },
+                        { label: "Sugar", value: `${selectedItem.nutritionInfo.sugar}g` },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="rounded border px-2 py-1 text-center">
+                          <p className="text-xs text-muted-foreground">{label}</p>
+                          <p className="text-sm font-medium">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Serving: {selectedItem.nutritionInfo.servingSize}</p>
+                  </div>
+                )}
+
                 {selectedItem.allergens && selectedItem.allergens.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Allergens</p>
@@ -1691,18 +1767,110 @@ export default function MenuItemsPage() {
                   </p>
                 </div>
               </div>
+              {/* Nutrition Info */}
+              <div className="col-span-4">
+                <p className="text-sm font-medium text-muted-foreground pt-2 pb-1 border-t">Nutrition Info <span className="font-normal">(per serving)</span></p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-calories" className="text-right">Calories (kcal)</Label>
+                <Input
+                  id="edit-calories"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.calories ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), calories: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-protein" className="text-right">Protein (g)</Label>
+                <Input
+                  id="edit-protein"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.protein ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), protein: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-carbs" className="text-right">Carbs (g)</Label>
+                <Input
+                  id="edit-carbs"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.carbs ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), carbs: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-fat" className="text-right">Fat (g)</Label>
+                <Input
+                  id="edit-fat"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.fat ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fat: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-fiber" className="text-right">Fiber (g)</Label>
+                <Input
+                  id="edit-fiber"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.fiber ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fiber: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-sugar" className="text-right">Sugar (g)</Label>
+                <Input
+                  id="edit-sugar"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.sugar ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), sugar: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-servingSize" className="text-right">Serving Size</Label>
+                <Input
+                  id="edit-servingSize"
+                  placeholder="e.g. 1 bowl, 200g"
+                  className="col-span-3"
+                  value={selectedItem.nutritionInfo?.servingSize ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), servingSize: e.target.value } })}
+                />
+              </div>
+
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="edit-allergens" className="text-right pt-2">
                   Allergens
                 </Label>
                 <div className="col-span-3 space-y-2">
-                  <Select 
-                    value="" 
+                  <Select
+                    value=""
                     onValueChange={(value) => {
                       const currentAllergens = selectedItem.allergens || [];
                       if (value && !currentAllergens.includes(value)) {
                         setSelectedItem({
-                          ...selectedItem, 
+                          ...selectedItem,
                           allergens: [...currentAllergens, value]
                         });
                       }
@@ -2228,17 +2396,109 @@ export default function MenuItemsPage() {
                 )}
               </div>
             </div>
+            {/* Nutrition Info */}
+            <div className="col-span-4">
+              <p className="text-sm font-medium text-muted-foreground pt-2 pb-1 border-t">Nutrition Info <span className="font-normal">(per serving)</span></p>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-calories" className="text-right">Calories (kcal)</Label>
+              <Input
+                id="add-calories"
+                type="number"
+                min="0"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.calories || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), calories: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-protein" className="text-right">Protein (g)</Label>
+              <Input
+                id="add-protein"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.protein || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), protein: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-carbs" className="text-right">Carbs (g)</Label>
+              <Input
+                id="add-carbs"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.carbs || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), carbs: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-fat" className="text-right">Fat (g)</Label>
+              <Input
+                id="add-fat"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.fat || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fat: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-fiber" className="text-right">Fiber (g)</Label>
+              <Input
+                id="add-fiber"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.fiber || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fiber: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-sugar" className="text-right">Sugar (g)</Label>
+              <Input
+                id="add-sugar"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.sugar || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), sugar: parseFloat(e.target.value) || 0 } })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-servingSize" className="text-right">Serving Size</Label>
+              <Input
+                id="add-servingSize"
+                placeholder="e.g. 1 bowl, 200g"
+                className="col-span-3"
+                value={(newItemData.nutritionInfo as NutritionInfo)?.servingSize || ""}
+                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), servingSize: e.target.value } })}
+              />
+            </div>
+
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="allergens" className="text-right pt-2">
                 Allergens
               </Label>
               <div className="col-span-3 space-y-2">
-                <Select 
-                  value="" 
+                <Select
+                  value=""
                   onValueChange={(value) => {
                     if (value && !((newItemData.allergens as string[]) || []).includes(value)) {
                       setNewItemData({
-                        ...newItemData, 
+                        ...newItemData,
                         allergens: [...((newItemData.allergens as string[]) || []), value]
                       });
                     }

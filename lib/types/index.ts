@@ -45,6 +45,12 @@ export interface MenuItem {
   allergens: string[]
   nutritionInfo?: {
     calories: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    servingSize: string
   }
   preparationTime?: number
   recommendedItems: string[]
