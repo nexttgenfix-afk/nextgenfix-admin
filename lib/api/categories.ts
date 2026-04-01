@@ -3,6 +3,7 @@ import apiClient from './client'
 export interface Category {
   _id: string
   name: string
+  parentCategory?: string | null
   description?: string
   image?: string
   itemCount?: number
@@ -10,8 +11,17 @@ export interface Category {
   updatedAt: string
 }
 
-export const getCategories = async () => {
-  const response = await apiClient.get<{ categories: Category[] }>('/admin/categories')
+export const getCategories = async (all = false, parentCategory?: string) => {
+  const params: Record<string, any> = {};
+  if (all) params.all = 'true';
+  if (parentCategory) params.parentCategory = parentCategory;
+  
+  const response = await apiClient.get<{ categories: Category[] }>('/admin/categories', { params })
+  return response.data
+}
+
+export const getSubcategories = async (parentId: string) => {
+  const response = await apiClient.get<{ subcategories: Category[] }>(`/categories/${parentId}/subcategories`)
   return response.data
 }
 

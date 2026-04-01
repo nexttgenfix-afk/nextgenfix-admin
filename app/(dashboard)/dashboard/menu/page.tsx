@@ -72,6 +72,7 @@ export interface MenuItem {
   };
   price: number;
   category: string;
+  subcategory?: string;
   cuisine: string;
   dietaryInfo: string[];
   allergens?: string[];
@@ -127,10 +128,13 @@ export default function MenuItemsPage() {
   const [categoryFilter, setCategoryFilter] = useState("")
   const [totalMenuItems, setTotalMenuItems] = useState(0)
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Category[]>([]);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [newItemData, setNewItemData] = useState<Record<string, unknown>>({
     name: "",
     category: "",
+    subcategory: "",
     price: 0,
     status: "Available",
     rating: 0,
@@ -270,23 +274,54 @@ export default function MenuItemsPage() {
   }, [searchQuery, categoryFilter, statusFilter, page, limit, toast]);
 
   const fetchCategories = useCallback(async () => {
-  try {
-    const response = await categoriesApi.getCategories();
-    if (Array.isArray(response.categories)) {
-      setCategories(response.categories);
-    } else if (Array.isArray(response)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setCategories(response as any);
+    try {
+      const response = await categoriesApi.getCategories();
+      if (Array.isArray(response.categories)) {
+        setCategories(response.categories);
+      } else if (Array.isArray(response)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setCategories(response as any);
+      }
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
     }
-  } catch (err) {
-    console.error("Failed to fetch categories:", err);
-  }
-}, []);
+  }, []);
+
+  const fetchSubcategories = useCallback(async (parentId: string) => {
+    setLoadingSubcategories(true);
+    try {
+      const response = await categoriesApi.getSubcategories(parentId);
+      if (Array.isArray(response.subcategories)) {
+        setSubcategories(response.subcategories);
+      }
+    } catch (err) {
+      console.error("Failed to fetch subcategories:", err);
+      toast({ title: "Error", description: "Failed to load subcategories" });
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
     fetchMenuItems();
     fetchCategories();
   }, [fetchMenuItems, fetchCategories]);
+
+  useEffect(() => {
+    if (newItemData.category) {
+      fetchSubcategories(newItemData.category as string);
+    } else {
+      setSubcategories([]);
+    }
+  }, [newItemData.category, fetchSubcategories]);
+
+  useEffect(() => {
+    if (selectedItem?.category) {
+      fetchSubcategories(selectedItem.category);
+    } else {
+      setSubcategories([]);
+    }
+  }, [selectedItem?.category, fetchSubcategories]);
 
   // Get menu item details API
   const handleViewItem = async (itemId: string) => {
@@ -403,6 +438,7 @@ export default function MenuItemsPage() {
         if (selectedItem.name) formData.append('name', selectedItem.name);
         if (selectedItem.price) formData.append('price', selectedItem.price.toString());
         if (selectedItem.category) formData.append('category', selectedItem.category);
+        if (selectedItem.subcategory) formData.append('subcategory', selectedItem.subcategory);
         if (selectedItem.status) formData.append('status', selectedItem.status === 'available' ? 'Available' : selectedItem.status === 'out-of-stock' ? 'Out of Stock' : 'Coming Soon');
         if (selectedItem.preparationTime) formData.append('preparationTime', selectedItem.preparationTime.toString());
         if (selectedItem.moodTag) formData.append('moodTag', selectedItem.moodTag);
@@ -455,6 +491,11 @@ export default function MenuItemsPage() {
         if (selectedItem.category && categories.length > 0) {
           const found = categories.find(cat => cat._id === selectedItem.category);
           if (found) payload.category = found._id;
+        }
+        if (selectedItem.subcategory) {
+          payload.subcategory = selectedItem.subcategory;
+        } else if (selectedItem.subcategory === "") {
+          payload.subcategory = null;
         }
         if (selectedItem.status !== undefined) {
           // Map frontend status to backend format
@@ -1429,13 +1470,33 @@ export default function MenuItemsPage() {
                 </Label>
                 <Select
                   value={selectedItem.category || ''}
-                  onValueChange={(value) => setSelectedItem({ ...selectedItem, category: value })}
+                  onValueChange={(value) => setSelectedItem({ ...selectedItem, category: value, subcategory: "" })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
+                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-subcategory" className="text-right">
+                  Subcategory
+                </Label>
+                <Select
+                  disabled={!selectedItem.category || loadingSubcategories}
+                  value={selectedItem.subcategory || 'none'}
+                  onValueChange={(value) => setSelectedItem({ ...selectedItem, subcategory: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {subcategories.map((cat) => (
                       <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2080,7 +2141,7 @@ export default function MenuItemsPage() {
               <div className="col-span-3 space-y-1">
                 <Select
                   value={(newItemData.category as string) || ''}
-                  onValueChange={(value) => setNewItemData({ ...newItemData, category: value })}
+                  onValueChange={(value) => setNewItemData({ ...newItemData, category: value, subcategory: "" })}
                 >
                   <SelectTrigger className={formErrors.category ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select category" />
@@ -2094,6 +2155,29 @@ export default function MenuItemsPage() {
                 {formErrors.category && (
                   <p className="text-xs text-red-500">{formErrors.category}</p>
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="subcategory" className="text-right">
+                Subcategory
+              </Label>
+              <div className="col-span-3 space-y-1">
+                <Select
+                  disabled={!newItemData.category || loadingSubcategories}
+                  value={(newItemData.subcategory as string) || ''}
+                  onValueChange={(value) => setNewItemData({ ...newItemData, subcategory: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {subcategories.map((cat) => (
+                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
