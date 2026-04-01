@@ -55,6 +55,7 @@ export interface MenuItem {
   description: string | { text: string; formatting: string };
   price: number;
   category: string;
+  subcategory?: string | null;
   cuisine: string;
   dietaryInfo: string[];
   status: "available" | "out-of-stock" | "coming-soon";

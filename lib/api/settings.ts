@@ -48,9 +48,9 @@ export interface TierInfo {
 }
 
 export interface TierConfig {
-  bronze: TierInfo
   silver: TierInfo
   gold: TierInfo
+  platinum: TierInfo
 }
 
 export interface ReferralConfig {
@@ -118,9 +118,9 @@ export const getSettings = async () => {
   maxDistance: raw2?.deliveryCharges?.maxDeliveryDistance ?? raw2?.deliveryCharges?.maxDeliveryDistance ?? 0,
     },
     tiers: {
-  bronze: { minOrders: raw2?.tierConfig?.bronze?.minOrders ?? 0, discount: raw2?.tierConfig?.bronze?.discount ?? 0, benefits: raw2?.tierConfig?.bronze?.benefits ?? [] },
   silver: { minOrders: raw2?.tierConfig?.silver?.minOrders ?? 0, discount: raw2?.tierConfig?.silver?.discount ?? 0, benefits: raw2?.tierConfig?.silver?.benefits ?? [] },
   gold: { minOrders: raw2?.tierConfig?.gold?.minOrders ?? 0, discount: raw2?.tierConfig?.gold?.discount ?? 0, benefits: raw2?.tierConfig?.gold?.benefits ?? [] },
+  platinum: { minOrders: raw2?.tierConfig?.platinum?.minOrders ?? 0, discount: raw2?.tierConfig?.platinum?.discount ?? 0, benefits: raw2?.tierConfig?.platinum?.benefits ?? [] },
     },
     referral: {
   isEnabled: raw2?.referralConfig?.enabled ?? false,
@@ -193,13 +193,14 @@ export const updateDelivery = async (payload: Partial<Settings['delivery']>) => 
 }
 
 export const updateTiers = async (tiers: Partial<Settings['tiers']>) => {
-  // backend expects { tierConfig: { bronze: {minOrders, discount}, ... } }
-  const tierConfig: Record<string, { minOrders?: number; discount?: number }> = {}
+  // backend expects { tierConfig: { silver: {minOrders, discount, benefits}, ... } }
+  const tierConfig: Record<string, { minOrders?: number; discount?: number; benefits?: string[] }> = {}
   for (const k of Object.keys(tiers)) {
     const t = (tiers as unknown as Record<string, Partial<TierInfo>>)[k]
     tierConfig[k] = {
       minOrders: t?.minOrders,
       discount: t?.discount,
+      benefits: t?.benefits,
     }
   }
   const response = await apiClient.put('/settings/tiers', { tierConfig })

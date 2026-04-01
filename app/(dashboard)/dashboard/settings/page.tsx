@@ -67,9 +67,9 @@ export default function SettingsPage() {
       maxDistance: 10,
     },
     tiers: {
-      bronze: { minOrders: 0, discount: 0, benefits: [] },
-      silver: { minOrders: 10, discount: 5, benefits: ["Priority support"] },
-      gold: { minOrders: 25, discount: 10, benefits: ["Priority support", "Free delivery"] },
+      silver: { minOrders: 5, discount: 5, benefits: ['Get List of Coupons'] },
+      gold: { minOrders: 15, discount: 10, benefits: ['Get List of Coupons', 'Members-only Deals'] },
+      platinum: { minOrders: 30, discount: 15, benefits: ['Get List of Coupons', 'Members-only Deals', 'Priority Support', 'Free Delivery'] },
     },
     referral: {
       isEnabled: true,
@@ -353,9 +353,9 @@ export default function SettingsPage() {
   ] as const
 
   const tiers = [
-    { key: 'bronze', label: 'Bronze', color: 'bg-status-warning-100 text-status-warning-800' },
-    { key: 'silver', label: 'Silver', color: 'bg-status-neutral-100 text-status-neutral-800' },
-    { key: 'gold', label: 'Gold', color: 'bg-status-warning-100 text-status-warning-800' },
+    { key: 'silver', label: 'Silver' },
+    { key: 'gold', label: 'Gold' },
+    { key: 'platinum', label: 'Platinum' },
   ] as const
 
   if (isLoading) {
