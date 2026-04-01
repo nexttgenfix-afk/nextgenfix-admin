@@ -254,7 +254,19 @@ export default function MenuItemsPage() {
                 : typeof obj.recommendedItems === 'string'
                   ? [obj.recommendedItems]
                   : [],
+              subcategory: (obj.subcategory as string) || '',
               images: Array.isArray(obj.images) ? obj.images as string[] : [],
+              nutritionInfo: obj.nutritionInfo
+                ? {
+                    calories: Number((obj.nutritionInfo as Record<string, unknown>).calories) || 0,
+                    protein: Number((obj.nutritionInfo as Record<string, unknown>).protein) || 0,
+                    carbs: Number((obj.nutritionInfo as Record<string, unknown>).carbs) || 0,
+                    fat: Number((obj.nutritionInfo as Record<string, unknown>).fat) || 0,
+                    fiber: Number((obj.nutritionInfo as Record<string, unknown>).fiber) || 0,
+                    sugar: Number((obj.nutritionInfo as Record<string, unknown>).sugar) || 0,
+                    servingSize: ((obj.nutritionInfo as Record<string, unknown>).servingSize as string) || '1 serving',
+                  }
+                : undefined,
               specialOffer: obj.specialOffer as MenuItem["specialOffer"],
               seasonal: obj.seasonal as MenuItem["seasonal"],
               createdAt: obj.createdAt as string,
@@ -1435,608 +1447,649 @@ export default function MenuItemsPage() {
       </Dialog>
       {/* Edit Item Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Menu Item</DialogTitle>
             <DialogDescription>Update menu item information</DialogDescription>
           </DialogHeader>
           {selectedItem && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="edit-name"
-                  value={selectedItem.name}
-                  className="col-span-3"
-                  onChange={(e) => setSelectedItem({...selectedItem, name: e.target.value})} />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-price" className="text-right">
-                  Price
-                </Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  step="0.01"
-                  value={selectedItem.price}
-                  className="col-span-3"
-                  onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})} />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-category" className="text-right">
-                  Category
-                </Label>
-                <Select
-                  value={selectedItem.category || ''}
-                  onValueChange={(value) => setSelectedItem({ ...selectedItem, category: value, subcategory: "" })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-subcategory" className="text-right">
-                  Subcategory
-                </Label>
-                <Select
-                  disabled={!selectedItem.category || loadingSubcategories}
-                  value={selectedItem.subcategory || 'none'}
-                  onValueChange={(value) => setSelectedItem({ ...selectedItem, subcategory: value === "none" ? "" : value })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {subcategories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-status" className="text-right">
-                  Status
-                </Label>
-                <Select 
-                  value={selectedItem.status || "available"} 
-                  onValueChange={(value) => setSelectedItem({...selectedItem, status: value as MenuItem["status"]})}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                    <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Limited Time Offer */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-isSpecial" className="text-right">
-                  Limited Time
-                </Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Checkbox
-                    id="edit-isSpecial"
-                    checked={selectedItem.specialOffer?.isSpecial || false}
-                    onCheckedChange={(checked) => 
-                      setSelectedItem({
-                        ...selectedItem,
-                        specialOffer: {
-                          isSpecial: checked === true,
-                          validFrom: selectedItem.specialOffer?.validFrom || "",
-                          validUntil: selectedItem.specialOffer?.validUntil || "",
-                          specialPrice: selectedItem.specialOffer?.specialPrice || 0,
-                          description: selectedItem.specialOffer?.description || "",
-                        }
-                      })
-                    }
-                  />
-                  <span className="text-sm text-muted-foreground">Make this a limited time menu item</span>
+            <div className="flex flex-col gap-6 py-2">
+
+              {/* Section 1: Basic Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Basic Info</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-name">
+                      Name
+                    </Label>
+                    <Input
+                      id="edit-name"
+                      value={selectedItem.name}
+                      onChange={(e) => setSelectedItem({...selectedItem, name: e.target.value})} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-price">
+                      Price
+                    </Label>
+                    <Input
+                      id="edit-price"
+                      type="number"
+                      step="0.01"
+                      value={selectedItem.price}
+                      onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-category">
+                      Category
+                    </Label>
+                    <Select
+                      value={selectedItem.category || ''}
+                      onValueChange={(value) => setSelectedItem({ ...selectedItem, category: value, subcategory: "" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-subcategory">
+                      Subcategory
+                    </Label>
+                    <Select
+                      disabled={!selectedItem.category || loadingSubcategories}
+                      value={selectedItem.subcategory || 'none'}
+                      onValueChange={(value) => setSelectedItem({ ...selectedItem, subcategory: value === "none" ? "" : value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {subcategories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="w-1/2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-status">
+                      Status
+                    </Label>
+                    <Select
+                      value={selectedItem.status || "available"}
+                      onValueChange={(value) => setSelectedItem({...selectedItem, status: value as MenuItem["status"]})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                        <SelectItem value="coming-soon">Coming Soon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              {selectedItem.specialOffer?.isSpecial && (
-                <>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="edit-validFrom" className="text-right">
-                      Available From
+              <hr className="border-muted" />
+
+              {/* Section 2: Details */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Details</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-preparationTime">
+                      Prep Time (min)
                     </Label>
                     <Input
-                      id="edit-validFrom"
-                      type="date"
-                      className="col-span-3"
-                      value={selectedItem.specialOffer?.validFrom ? new Date(selectedItem.specialOffer.validFrom).toISOString().split('T')[0] : ""}
-                      onChange={(e) => 
-                        setSelectedItem({
-                          ...selectedItem,
-                          specialOffer: {
-                            isSpecial: true,
-                            validFrom: e.target.value,
-                            validUntil: selectedItem.specialOffer?.validUntil || "",
-                            specialPrice: selectedItem.specialOffer?.specialPrice || 0,
-                            description: selectedItem.specialOffer?.description || "",
-                          }
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="edit-validUntil" className="text-right">
-                      Available Until
-                    </Label>
-                    <Input
-                      id="edit-validUntil"
-                      type="date"
-                      className="col-span-3"
-                      value={selectedItem.specialOffer?.validUntil ? new Date(selectedItem.specialOffer.validUntil).toISOString().split('T')[0] : ""}
-                      onChange={(e) => 
-                        setSelectedItem({
-                          ...selectedItem,
-                          specialOffer: {
-                            isSpecial: true,
-                            validFrom: selectedItem.specialOffer?.validFrom || "",
-                            validUntil: e.target.value,
-                            specialPrice: selectedItem.specialOffer?.specialPrice || 0,
-                            description: selectedItem.specialOffer?.description || "",
-                          }
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="edit-specialPrice" className="text-right">
-                      Special Price
-                    </Label>
-                    <Input
-                      id="edit-specialPrice"
+                      id="edit-preparationTime"
                       type="number"
-                      step="0.01"
-                      className="col-span-3"
-                      value={selectedItem.specialOffer?.specialPrice || ""}
-                      onChange={(e) => 
-                        setSelectedItem({
-                          ...selectedItem,
-                          specialOffer: {
-                            isSpecial: true,
-                            validFrom: selectedItem.specialOffer?.validFrom || "",
-                            validUntil: selectedItem.specialOffer?.validUntil || "",
-                            specialPrice: parseFloat(e.target.value),
-                            description: selectedItem.specialOffer?.description || "",
-                          }
-                        })
-                      }
+                      placeholder="0"
+                      value={selectedItem.preparationTime || ""}
+                      onChange={(e) => setSelectedItem({...selectedItem, preparationTime: parseInt(e.target.value)})}
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="edit-offerDescription" className="text-right">
-                      Offer Description
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-moodTag">
+                      Mood Tag
                     </Label>
-                    <Input
-                      id="edit-offerDescription"
-                      className="col-span-3"
-                      placeholder="e.g. 50% off for new year"
-                      value={selectedItem.specialOffer?.description || ""}
-                      onChange={(e) => 
-                        setSelectedItem({
-                          ...selectedItem,
-                          specialOffer: {
-                            isSpecial: true,
-                            validFrom: selectedItem.specialOffer?.validFrom || "",
-                            validUntil: selectedItem.specialOffer?.validUntil || "",
-                            specialPrice: selectedItem.specialOffer?.specialPrice || 0,
-                            description: e.target.value,
-                          }
-                        })
-                      }
-                    />
+                    <Select
+                      value={selectedItem.moodTag || ""}
+                      onValueChange={(value) => setSelectedItem({...selectedItem, moodTag: value as MenuItem["moodTag"]})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select mood" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="locked_in">Locked In</SelectItem>
+                        <SelectItem value="bougie">Bougie</SelectItem>
+                        <SelectItem value="homesick">Homesick</SelectItem>
+                        <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
+                        <SelectItem value="need_a_hug">Need a Hug</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </>
-              )}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-moodTag" className="text-right">
-                  Mood Tag
-                </Label>
-                <Select 
-                  value={selectedItem.moodTag || ""} 
-                  onValueChange={(value) => setSelectedItem({...selectedItem, moodTag: value as MenuItem["moodTag"]})}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select mood" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="locked_in">Locked In</SelectItem>
-                    <SelectItem value="bougie">Bougie</SelectItem>
-                    <SelectItem value="homesick">Homesick</SelectItem>
-                    <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
-                    <SelectItem value="need_a_hug">Need a Hug</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-hungerLevelTag" className="text-right">
-                  Hunger Level
-                </Label>
-                <Select 
-                  value={selectedItem.hungerLevelTag || ""} 
-                  onValueChange={(value) => setSelectedItem({...selectedItem, hungerLevelTag: value as MenuItem["hungerLevelTag"]})}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select hunger level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="little_hungry">Little Hungry</SelectItem>
-                    <SelectItem value="quite_hungry">Quite Hungry</SelectItem>
-                    <SelectItem value="very_hungry">Very Hungry</SelectItem>
-                    <SelectItem value="super_hungry">Super Hungry</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-isSeasonSpecial" className="text-right">
-                  Season Special
-                </Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Checkbox
-                    id="edit-isSeasonSpecial"
-                    checked={selectedItem.seasonal?.isSeasonSpecial || false}
-                    onCheckedChange={(checked) => setSelectedItem({
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-hungerLevelTag">
+                      Hunger Level
+                    </Label>
+                    <Select
+                      value={selectedItem.hungerLevelTag || ""}
+                      onValueChange={(value) => setSelectedItem({...selectedItem, hungerLevelTag: value as MenuItem["hungerLevelTag"]})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select hunger level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="little_hungry">Little Hungry</SelectItem>
+                        <SelectItem value="quite_hungry">Quite Hungry</SelectItem>
+                        <SelectItem value="very_hungry">Very Hungry</SelectItem>
+                        <SelectItem value="super_hungry">Super Hungry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-description">
+                    Description
+                  </Label>
+                  <Input
+                    id="edit-description"
+                    placeholder="Enter item description"
+                    value={typeof selectedItem.description === 'object'
+                      ? selectedItem.description.text
+                      : selectedItem.description || ""}
+                    onChange={(e) => setSelectedItem({
                       ...selectedItem,
-                      seasonal: {
-                        isSeasonSpecial: checked === true,
-                        seasonalFrom: selectedItem.seasonal?.seasonalFrom || "",
-                        seasonalUntil: selectedItem.seasonal?.seasonalUntil || "",
-                      }
+                      description: typeof selectedItem.description === 'object'
+                        ? {...selectedItem.description, text: e.target.value}
+                        : {text: e.target.value, formatting: 'PlainText'}
                     })}
                   />
-                  <span className="text-sm text-muted-foreground">Mark as season special item</span>
                 </div>
               </div>
-              {selectedItem.seasonal?.isSeasonSpecial && (
-                <>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Season From</Label>
-                    <Input
-                      type="date"
-                      className="col-span-3"
-                      value={selectedItem.seasonal?.seasonalFrom ? new Date(selectedItem.seasonal.seasonalFrom).toISOString().split('T')[0] : ""}
-                      onChange={(e) => setSelectedItem({
-                        ...selectedItem,
-                        seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalFrom: e.target.value }
-                      })}
+
+              <hr className="border-muted" />
+
+              {/* Section 3: Offers & Seasons */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Offers &amp; Seasons</h3>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-isSpecial">
+                    Limited Time
+                  </Label>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox
+                      id="edit-isSpecial"
+                      checked={selectedItem.specialOffer?.isSpecial || false}
+                      onCheckedChange={(checked) =>
+                        setSelectedItem({
+                          ...selectedItem,
+                          specialOffer: {
+                            isSpecial: checked === true,
+                            validFrom: selectedItem.specialOffer?.validFrom || "",
+                            validUntil: selectedItem.specialOffer?.validUntil || "",
+                            specialPrice: selectedItem.specialOffer?.specialPrice || 0,
+                            description: selectedItem.specialOffer?.description || "",
+                          }
+                        })
+                      }
                     />
+                    <span className="text-sm text-muted-foreground">Make this a limited time menu item</span>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Season Until</Label>
-                    <Input
-                      type="date"
-                      className="col-span-3"
-                      value={selectedItem.seasonal?.seasonalUntil ? new Date(selectedItem.seasonal.seasonalUntil).toISOString().split('T')[0] : ""}
-                      onChange={(e) => setSelectedItem({
-                        ...selectedItem,
-                        seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalUntil: e.target.value }
-                      })}
-                    />
-                  </div>
-                </>
-              )}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-description" className="text-right">
-                  Description
-                </Label>
-                <Input
-                  id="edit-description"
-                  placeholder="Enter item description"
-                  className="col-span-3"
-                  value={typeof selectedItem.description === 'object' 
-                    ? selectedItem.description.text 
-                    : selectedItem.description || ""}
-                  onChange={(e) => setSelectedItem({
-                    ...selectedItem, 
-                    description: typeof selectedItem.description === 'object'
-                      ? {...selectedItem.description, text: e.target.value}
-                      : {text: e.target.value, formatting: 'PlainText'}
-                  })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-preparationTime" className="text-right">
-                  Prep Time (min)
-                </Label>
-                <Input
-                  id="edit-preparationTime"
-                  type="number"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.preparationTime || ""}
-                  onChange={(e) => setSelectedItem({...selectedItem, preparationTime: parseInt(e.target.value)})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="edit-images" className="text-right pt-2">
-                  Images
-                </Label>
-                <div className="col-span-3 space-y-2">
-                  {/* Show current image if exists and no new images selected */}
-                  {selectedItem.imageUrl && imagePreviewUrls.length === 0 && (
-                    <div className="mb-2">
-                      <p className="text-xs text-muted-foreground mb-2">Current Image:</p>
-                      <div className="relative inline-block">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={selectedItem.imageUrl} 
-                          alt="Current menu item"
-                          className="w-32 h-32 object-cover rounded border"
-                          onError={(e) => {
-                            // Fallback if image fails to load
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
-                          }}
+                </div>
+                {selectedItem.specialOffer?.isSpecial && (
+                  <>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="edit-validFrom">
+                          Available From
+                        </Label>
+                        <Input
+                          id="edit-validFrom"
+                          type="date"
+                          value={selectedItem.specialOffer?.validFrom ? new Date(selectedItem.specialOffer.validFrom).toISOString().split('T')[0] : ""}
+                          onChange={(e) =>
+                            setSelectedItem({
+                              ...selectedItem,
+                              specialOffer: {
+                                isSpecial: true,
+                                validFrom: e.target.value,
+                                validUntil: selectedItem.specialOffer?.validUntil || "",
+                                specialPrice: selectedItem.specialOffer?.specialPrice || 0,
+                                description: selectedItem.specialOffer?.description || "",
+                              }
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="edit-validUntil">
+                          Available Until
+                        </Label>
+                        <Input
+                          id="edit-validUntil"
+                          type="date"
+                          value={selectedItem.specialOffer?.validUntil ? new Date(selectedItem.specialOffer.validUntil).toISOString().split('T')[0] : ""}
+                          onChange={(e) =>
+                            setSelectedItem({
+                              ...selectedItem,
+                              specialOffer: {
+                                isSpecial: true,
+                                validFrom: selectedItem.specialOffer?.validFrom || "",
+                                validUntil: e.target.value,
+                                specialPrice: selectedItem.specialOffer?.specialPrice || 0,
+                                description: selectedItem.specialOffer?.description || "",
+                              }
+                            })
+                          }
                         />
                       </div>
                     </div>
-                  )}
-                  
-                  <Input
-                    id="edit-images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageSelect}
-                    className="cursor-pointer"
-                  />
-                  
-                  {/* Show new image previews */}
-                  {imagePreviewUrls.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">New Images to Upload:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {imagePreviewUrls.map((url, index) => (
-                          <div key={index} className="relative">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={url} 
-                              alt={`Preview ${index + 1}`}
-                              className="w-20 h-20 object-cover rounded border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="edit-specialPrice">
+                          Special Price
+                        </Label>
+                        <Input
+                          id="edit-specialPrice"
+                          type="number"
+                          step="0.01"
+                          value={selectedItem.specialOffer?.specialPrice || ""}
+                          onChange={(e) =>
+                            setSelectedItem({
+                              ...selectedItem,
+                              specialOffer: {
+                                isSpecial: true,
+                                validFrom: selectedItem.specialOffer?.validFrom || "",
+                                validUntil: selectedItem.specialOffer?.validUntil || "",
+                                specialPrice: parseFloat(e.target.value),
+                                description: selectedItem.specialOffer?.description || "",
+                              }
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="edit-offerDescription">
+                          Offer Description
+                        </Label>
+                        <Input
+                          id="edit-offerDescription"
+                          placeholder="e.g. 50% off for new year"
+                          value={selectedItem.specialOffer?.description || ""}
+                          onChange={(e) =>
+                            setSelectedItem({
+                              ...selectedItem,
+                              specialOffer: {
+                                isSpecial: true,
+                                validFrom: selectedItem.specialOffer?.validFrom || "",
+                                validUntil: selectedItem.specialOffer?.validUntil || "",
+                                specialPrice: selectedItem.specialOffer?.specialPrice || 0,
+                                description: e.target.value,
+                              }
+                            })
+                          }
+                        />
                       </div>
                     </div>
-                  )}
-                  
-                  <p className="text-xs text-muted-foreground">
-                    {imagePreviewUrls.length > 0 
-                      ? "These new images will replace the existing image."
-                      : "Upload new images to replace the existing image (up to 5, max 5MB each)."}
-                  </p>
+                  </>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-isSeasonSpecial">
+                    Season Special
+                  </Label>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox
+                      id="edit-isSeasonSpecial"
+                      checked={selectedItem.seasonal?.isSeasonSpecial || false}
+                      onCheckedChange={(checked) => setSelectedItem({
+                        ...selectedItem,
+                        seasonal: {
+                          isSeasonSpecial: checked === true,
+                          seasonalFrom: selectedItem.seasonal?.seasonalFrom || "",
+                          seasonalUntil: selectedItem.seasonal?.seasonalUntil || "",
+                        }
+                      })}
+                    />
+                    <span className="text-sm text-muted-foreground">Mark as season special item</span>
+                  </div>
                 </div>
-              </div>
-              {/* Nutrition Info */}
-              <div className="col-span-4">
-                <p className="text-sm font-medium text-muted-foreground pt-2 pb-1 border-t">Nutrition Info <span className="font-normal">(per serving)</span></p>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-calories" className="text-right">Calories (kcal)</Label>
-                <Input
-                  id="edit-calories"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.calories ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), calories: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-protein" className="text-right">Protein (g)</Label>
-                <Input
-                  id="edit-protein"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.protein ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), protein: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-carbs" className="text-right">Carbs (g)</Label>
-                <Input
-                  id="edit-carbs"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.carbs ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), carbs: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-fat" className="text-right">Fat (g)</Label>
-                <Input
-                  id="edit-fat"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.fat ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fat: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-fiber" className="text-right">Fiber (g)</Label>
-                <Input
-                  id="edit-fiber"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.fiber ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fiber: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-sugar" className="text-right">Sugar (g)</Label>
-                <Input
-                  id="edit-sugar"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.sugar ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), sugar: parseFloat(e.target.value) || 0 } })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-servingSize" className="text-right">Serving Size</Label>
-                <Input
-                  id="edit-servingSize"
-                  placeholder="e.g. 1 bowl, 200g"
-                  className="col-span-3"
-                  value={selectedItem.nutritionInfo?.servingSize ?? ""}
-                  onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), servingSize: e.target.value } })}
-                />
+                {selectedItem.seasonal?.isSeasonSpecial && (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Season From</Label>
+                      <Input
+                        type="date"
+                        value={selectedItem.seasonal?.seasonalFrom ? new Date(selectedItem.seasonal.seasonalFrom).toISOString().split('T')[0] : ""}
+                        onChange={(e) => setSelectedItem({
+                          ...selectedItem,
+                          seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalFrom: e.target.value }
+                        })}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Season Until</Label>
+                      <Input
+                        type="date"
+                        value={selectedItem.seasonal?.seasonalUntil ? new Date(selectedItem.seasonal.seasonalUntil).toISOString().split('T')[0] : ""}
+                        onChange={(e) => setSelectedItem({
+                          ...selectedItem,
+                          seasonal: { ...selectedItem.seasonal!, isSeasonSpecial: true, seasonalUntil: e.target.value }
+                        })}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="edit-allergens" className="text-right pt-2">
-                  Allergens
-                </Label>
-                <div className="col-span-3 space-y-2">
-                  <Select
-                    value=""
-                    onValueChange={(value) => {
-                      const currentAllergens = selectedItem.allergens || [];
-                      if (value && !currentAllergens.includes(value)) {
-                        setSelectedItem({
-                          ...selectedItem,
-                          allergens: [...currentAllergens, value]
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select allergens" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nuts">Nuts</SelectItem>
-                      <SelectItem value="dairy">Dairy</SelectItem>
-                      <SelectItem value="gluten">Gluten</SelectItem>
-                      <SelectItem value="soy">Soy</SelectItem>
-                      <SelectItem value="eggs">Eggs</SelectItem>
-                      <SelectItem value="fish">Fish</SelectItem>
-                      <SelectItem value="shellfish">Shellfish</SelectItem>
-                      <SelectItem value="wheat">Wheat</SelectItem>
-                      <SelectItem value="peanuts">Peanuts</SelectItem>
-                      <SelectItem value="sesame">Sesame</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {selectedItem.allergens && selectedItem.allergens.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedItem.allergens.map((allergen, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary"
-                          className="flex items-center gap-1"
-                        >
-                          {allergen}
-                          <X 
-                            className="h-3 w-3 cursor-pointer" 
-                            onClick={() => {
-                              setSelectedItem({
-                                ...selectedItem,
-                                allergens: selectedItem.allergens?.filter((_, i) => i !== index)
-                              });
+              <hr className="border-muted" />
+
+              {/* Section 4: Images */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Images</h3>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-images">
+                    Product Images
+                  </Label>
+                  <div className="space-y-2">
+                    {/* Show current image if exists and no new images selected */}
+                    {selectedItem.imageUrl && imagePreviewUrls.length === 0 && (
+                      <div className="mb-2">
+                        <p className="text-xs text-muted-foreground mb-2">Current Image:</p>
+                        <div className="relative inline-block">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={selectedItem.imageUrl}
+                            alt="Current menu item"
+                            className="w-32 h-32 object-cover rounded border"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                             }}
                           />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                        </div>
+                      </div>
+                    )}
+
+                    <Input
+                      id="edit-images"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="cursor-pointer"
+                    />
+
+                    {/* Show new image previews */}
+                    {imagePreviewUrls.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">New Images to Upload:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {imagePreviewUrls.map((url, index) => (
+                            <div key={index} className="relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={url}
+                                alt={`Preview ${index + 1}`}
+                                className="w-20 h-20 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      {imagePreviewUrls.length > 0
+                        ? "These new images will replace the existing image."
+                        : "Upload new images to replace the existing image (up to 5, max 5MB each)."}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="edit-recommendedItems" className="text-right pt-2">
-                  Recommended Items
-                </Label>
-                <div className="col-span-3 space-y-2">
-                  <Select 
-                    value="" 
-                    onValueChange={(value) => {
-                      const currentRecommended = selectedItem.recommendedItems || [];
-                      if (value && !currentRecommended.includes(value)) {
-                        setSelectedItem({
-                          ...selectedItem, 
-                          recommendedItems: [...currentRecommended, value]
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select recommended items" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {menuItems
-                        .filter(item => item.status === 'available' && item.id !== selectedItem.id)
-                        .map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedItem.recommendedItems && selectedItem.recommendedItems.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedItem.recommendedItems.map((itemId, index) => {
-                        const recommendedItem = menuItems.find(item => item.id === itemId);
-                        return (
-                          <Badge 
-                            key={index} 
+
+              <hr className="border-muted" />
+
+              {/* Section 5: Nutrition Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Nutrition Info (per serving)</h3>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-calories">Calories (kcal)</Label>
+                    <Input
+                      id="edit-calories"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.calories ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), calories: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-protein">Protein (g)</Label>
+                    <Input
+                      id="edit-protein"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.protein ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), protein: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-carbs">Carbs (g)</Label>
+                    <Input
+                      id="edit-carbs"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.carbs ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), carbs: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-fat">Fat (g)</Label>
+                    <Input
+                      id="edit-fat"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.fat ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fat: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-fiber">Fiber (g)</Label>
+                    <Input
+                      id="edit-fiber"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.fiber ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), fiber: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-sugar">Sugar (g)</Label>
+                    <Input
+                      id="edit-sugar"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={selectedItem.nutritionInfo?.sugar ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), sugar: parseFloat(e.target.value) || 0 } })}
+                    />
+                  </div>
+                </div>
+                <div className="w-1/2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="edit-servingSize">Serving Size</Label>
+                    <Input
+                      id="edit-servingSize"
+                      placeholder="e.g. 1 bowl, 200g"
+                      value={selectedItem.nutritionInfo?.servingSize ?? ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, nutritionInfo: { ...(selectedItem.nutritionInfo ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, servingSize: "1 serving" }), servingSize: e.target.value } })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-muted" />
+
+              {/* Section 6: Additional */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Additional</h3>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-allergens">
+                    Allergens
+                  </Label>
+                  <div className="space-y-2">
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        const currentAllergens = selectedItem.allergens || [];
+                        if (value && !currentAllergens.includes(value)) {
+                          setSelectedItem({
+                            ...selectedItem,
+                            allergens: [...currentAllergens, value]
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select allergens" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nuts">Nuts</SelectItem>
+                        <SelectItem value="dairy">Dairy</SelectItem>
+                        <SelectItem value="gluten">Gluten</SelectItem>
+                        <SelectItem value="soy">Soy</SelectItem>
+                        <SelectItem value="eggs">Eggs</SelectItem>
+                        <SelectItem value="fish">Fish</SelectItem>
+                        <SelectItem value="shellfish">Shellfish</SelectItem>
+                        <SelectItem value="wheat">Wheat</SelectItem>
+                        <SelectItem value="peanuts">Peanuts</SelectItem>
+                        <SelectItem value="sesame">Sesame</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selectedItem.allergens && selectedItem.allergens.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedItem.allergens.map((allergen, index) => (
+                          <Badge
+                            key={index}
                             variant="secondary"
                             className="flex items-center gap-1"
                           >
-                            {recommendedItem?.name || itemId}
-                            <X 
-                              className="h-3 w-3 cursor-pointer" 
-                              onClick={() => {
-                                setSelectedItem({
-                                  ...selectedItem,
-                                  recommendedItems: selectedItem.recommendedItems?.filter((_, i) => i !== index)
-                                });
+                            {allergen}
+                            <button
+                              type="button"
+                              className="ml-1 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedItem((prev) => prev ? {
+                                  ...prev,
+                                  allergens: prev.allergens?.filter((_, i) => i !== index)
+                                } : prev);
                               }}
-                            />
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Select menu items to recommend with this dish
-                  </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-recommendedItems">
+                    Recommended Items
+                  </Label>
+                  <div className="space-y-2">
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        const currentRecommended = selectedItem.recommendedItems || [];
+                        if (value && !currentRecommended.includes(value)) {
+                          setSelectedItem({
+                            ...selectedItem,
+                            recommendedItems: [...currentRecommended, value]
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select recommended items" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {menuItems
+                          .filter(item => item.status === 'available' && item.id !== selectedItem.id)
+                          .map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedItem.recommendedItems && selectedItem.recommendedItems.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedItem.recommendedItems.map((itemId, index) => {
+                          const recommendedItem = menuItems.find(item => item.id === itemId);
+                          return (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
+                              {recommendedItem?.name || itemId}
+                              <X
+                                className="h-3 w-3 cursor-pointer"
+                                onClick={() => {
+                                  setSelectedItem({
+                                    ...selectedItem,
+                                    recommendedItems: selectedItem.recommendedItems?.filter((_, i) => i !== index)
+                                  });
+                                }}
+                              />
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Select menu items to recommend with this dish
+                    </p>
+                  </div>
                 </div>
               </div>
+
             </div>
           )}
           <DialogFooter>
@@ -2090,603 +2143,645 @@ export default function MenuItemsPage() {
 
       {/* Add Item Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Menu Item</DialogTitle>
             <DialogDescription>
               Create a new menu item with the following information.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Input
-                  id="name"
-                  placeholder="Enter item name"
-                  value={(newItemData.name as string) || ""}
-                  onChange={(e) => setNewItemData({...newItemData, name: e.target.value})}
-                  className={formErrors.name ? "border-red-500" : ""}
-                />
-                {formErrors.name && (
-                  <p className="text-xs text-red-500">{formErrors.name}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={(newItemData.price as number) || ""}
-                  onChange={(e) => setNewItemData({...newItemData, price: parseFloat(e.target.value)})}
-                  className={formErrors.price ? "border-red-500" : ""}
-                />
-                {formErrors.price && (
-                  <p className="text-xs text-red-500">{formErrors.price}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category" className="text-right">
-                Category <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Select
-                  value={(newItemData.category as string) || ''}
-                  onValueChange={(value) => setNewItemData({ ...newItemData, category: value, subcategory: "" })}
-                >
-                  <SelectTrigger className={formErrors.category ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formErrors.category && (
-                  <p className="text-xs text-red-500">{formErrors.category}</p>
-                )}
-              </div>
-            </div>
+          <div className="flex flex-col gap-6 py-2">
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="subcategory" className="text-right">
-                Subcategory
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Select
-                  disabled={!newItemData.category || loadingSubcategories}
-                  value={(newItemData.subcategory as string) || ''}
-                  onValueChange={(value) => setNewItemData({ ...newItemData, subcategory: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {subcategories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <Select value={(newItemData.status as string) || "Available"} onValueChange={(value) => setNewItemData({...newItemData, status: value})}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Available">Available</SelectItem>
-                  <SelectItem value="Out of Stock">Out of Stock</SelectItem>
-                  <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Limited Time Offer */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="isSpecial" className="text-right">
-                Limited Time
-              </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <Checkbox
-                  id="isSpecial"
-                  checked={(newItemData.specialOffer as any)?.isSpecial || false}
-                  onCheckedChange={(checked) => 
-                    setNewItemData({
-                      ...newItemData,
-                      specialOffer: {
-                        ...(newItemData.specialOffer as any),
-                        isSpecial: checked === true
-                      }
-                    })
-                  }
-                />
-                <span className="text-sm text-muted-foreground">Make this a limited time menu item</span>
-              </div>
-            </div>
-
-            {((newItemData.specialOffer as any)?.isSpecial) && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="validFrom" className="text-right">
-                    Available From
+            {/* Section 1: Basic Info */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Basic Info</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="name">
+                    Name <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="validFrom"
-                    type="date"
-                    className="col-span-3"
-                    value={(newItemData.specialOffer as any)?.validFrom || ""}
-                    onChange={(e) => 
-                      setNewItemData({
-                        ...newItemData,
-                        specialOffer: {
-                          ...(newItemData.specialOffer as any),
-                          validFrom: e.target.value
-                        }
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="validUntil" className="text-right">
-                    Available Until
-                  </Label>
-                  <Input
-                    id="validUntil"
-                    type="date"
-                    className="col-span-3"
-                    value={(newItemData.specialOffer as any)?.validUntil || ""}
-                    onChange={(e) => 
-                      setNewItemData({
-                        ...newItemData,
-                        specialOffer: {
-                          ...(newItemData.specialOffer as any),
-                          validUntil: e.target.value
-                        }
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="specialPrice" className="text-right">
-                    Special Price
-                  </Label>
-                  <Input
-                    id="specialPrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="col-span-3"
-                    value={(newItemData.specialOffer as any)?.specialPrice || ""}
-                    onChange={(e) => 
-                      setNewItemData({
-                        ...newItemData,
-                        specialOffer: {
-                          ...(newItemData.specialOffer as any),
-                          specialPrice: parseFloat(e.target.value)
-                        }
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="offerDescription" className="text-right">
-                    Offer Description
-                  </Label>
-                  <Input
-                    id="offerDescription"
-                    placeholder="e.g. Festival Season Special"
-                    className="col-span-3"
-                    value={(newItemData.specialOffer as any)?.description || ""}
-                    onChange={(e) => 
-                      setNewItemData({
-                        ...newItemData,
-                        specialOffer: {
-                          ...(newItemData.specialOffer as any),
-                          description: e.target.value
-                        }
-                      })
-                    }
-                  />
-                </div>
-              </>
-            )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="rating" className="text-right">
-                Rating
-              </Label>
-              <Input
-                id="rating"
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
-                placeholder="0.0"
-                className="col-span-3"
-                value={(newItemData.rating as number) || ""}
-                onChange={(e) => setNewItemData({...newItemData, rating: parseFloat(e.target.value)})}
-              />
-            </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="moodTag" className="text-right">
-                Mood Tag
-              </Label>
-              <Select value={(newItemData.moodTag as string) || ""} onValueChange={(value) => setNewItemData({...newItemData, moodTag: value || null})}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select mood" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="locked_in">Locked In</SelectItem>
-                  <SelectItem value="bougie">Bougie</SelectItem>
-                  <SelectItem value="homesick">Homesick</SelectItem>
-                  <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
-                  <SelectItem value="need_a_hug">Need a Hug</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="hungerLevelTag" className="text-right">
-                Hunger Level
-              </Label>
-              <Select value={(newItemData.hungerLevelTag as string) || ""} onValueChange={(value) => setNewItemData({...newItemData, hungerLevelTag: value || null})}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select hunger level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="little_hungry">Little Hungry</SelectItem>
-                  <SelectItem value="quite_hungry">Quite Hungry</SelectItem>
-                  <SelectItem value="very_hungry">Very Hungry</SelectItem>
-                  <SelectItem value="super_hungry">Super Hungry</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="isSeasonSpecial" className="text-right">
-                Season Special
-              </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <Checkbox
-                  id="isSeasonSpecial"
-                  checked={(newItemData.seasonal as any)?.isSeasonSpecial || false}
-                  onCheckedChange={(checked) => setNewItemData({
-                    ...newItemData,
-                    seasonal: {
-                      ...(newItemData.seasonal as any),
-                      isSeasonSpecial: checked === true,
-                    }
-                  })}
-                />
-                <span className="text-sm text-muted-foreground">Mark as season special item</span>
-              </div>
-            </div>
-            {((newItemData.seasonal as any)?.isSeasonSpecial) && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Season From</Label>
-                  <Input
-                    type="date"
-                    className="col-span-3"
-                    value={(newItemData.seasonal as any)?.seasonalFrom || ""}
-                    onChange={(e) => setNewItemData({
-                      ...newItemData,
-                      seasonal: { ...(newItemData.seasonal as any), seasonalFrom: e.target.value }
-                    })}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Season Until</Label>
-                  <Input
-                    type="date"
-                    className="col-span-3"
-                    value={(newItemData.seasonal as any)?.seasonalUntil || ""}
-                    onChange={(e) => setNewItemData({
-                      ...newItemData,
-                      seasonal: { ...(newItemData.seasonal as any), seasonalUntil: e.target.value }
-                    })}
-                  />
-                </div>
-              </>
-            )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Input
-                  id="description"
-                  placeholder="Enter item description (min 10 chars)"
-                  value={typeof newItemData.description === 'object' 
-                    ? (newItemData.description as { text: string })?.text || ""
-                    : (newItemData.description as string) || ""}
-                  onChange={(e) => setNewItemData({...newItemData, description: e.target.value})}
-                  className={formErrors.description ? "border-red-500" : ""}
-                />
-                {formErrors.description && (
-                  <p className="text-xs text-red-500">{formErrors.description}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="preparationTime" className="text-right">
-                Prep Time (min)
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Input
-                  id="preparationTime"
-                  type="number"
-                  placeholder="0"
-                  value={(newItemData.preparationTime as number) || ""}
-                  onChange={(e) => setNewItemData({...newItemData, preparationTime: parseInt(e.target.value)})}
-                  className={formErrors.preparationTime ? "border-red-500" : ""}
-                />
-                {formErrors.preparationTime && (
-                  <p className="text-xs text-red-500">{formErrors.preparationTime}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="images" className="text-right pt-2">
-                Product Images
-              </Label>
-              <div className="col-span-3 space-y-2">
-                <Input
-                  id="images"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className={`cursor-pointer ${formErrors.images ? "border-red-500" : ""}`}
-                />
-                {imagePreviewUrls.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {imagePreviewUrls.map((url, index) => (
-                      <div key={index} className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={url} 
-                          alt={`Preview ${index + 1}`}
-                          className="w-20 h-20 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                  <div className="space-y-1">
+                    <Input
+                      id="name"
+                      placeholder="Enter item name"
+                      value={(newItemData.name as string) || ""}
+                      onChange={(e) => setNewItemData({...newItemData, name: e.target.value})}
+                      className={formErrors.name ? "border-red-500" : ""}
+                    />
+                    {formErrors.name && (
+                      <p className="text-xs text-red-500">{formErrors.name}</p>
+                    )}
                   </div>
-                )}
-                {formErrors.images ? (
-                  <p className="text-xs text-red-500">{formErrors.images}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Upload up to 5 images (max 5MB each). First image will be the main display.
-                  </p>
-                )}
-              </div>
-            </div>
-            {/* Nutrition Info */}
-            <div className="col-span-4">
-              <p className="text-sm font-medium text-muted-foreground pt-2 pb-1 border-t">Nutrition Info <span className="font-normal">(per serving)</span></p>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-calories" className="text-right">Calories (kcal)</Label>
-              <Input
-                id="add-calories"
-                type="number"
-                min="0"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.calories || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), calories: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-protein" className="text-right">Protein (g)</Label>
-              <Input
-                id="add-protein"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.protein || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), protein: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-carbs" className="text-right">Carbs (g)</Label>
-              <Input
-                id="add-carbs"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.carbs || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), carbs: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-fat" className="text-right">Fat (g)</Label>
-              <Input
-                id="add-fat"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.fat || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fat: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-fiber" className="text-right">Fiber (g)</Label>
-              <Input
-                id="add-fiber"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.fiber || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fiber: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-sugar" className="text-right">Sugar (g)</Label>
-              <Input
-                id="add-sugar"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="0"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.sugar || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), sugar: parseFloat(e.target.value) || 0 } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-servingSize" className="text-right">Serving Size</Label>
-              <Input
-                id="add-servingSize"
-                placeholder="e.g. 1 bowl, 200g"
-                className="col-span-3"
-                value={(newItemData.nutritionInfo as NutritionInfo)?.servingSize || ""}
-                onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), servingSize: e.target.value } })}
-              />
-            </div>
-
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="allergens" className="text-right pt-2">
-                Allergens
-              </Label>
-              <div className="col-span-3 space-y-2">
-                <Select
-                  value=""
-                  onValueChange={(value) => {
-                    if (value && !((newItemData.allergens as string[]) || []).includes(value)) {
-                      setNewItemData({
-                        ...newItemData,
-                        allergens: [...((newItemData.allergens as string[]) || []), value]
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select allergens" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nuts">Nuts</SelectItem>
-                    <SelectItem value="dairy">Dairy</SelectItem>
-                    <SelectItem value="gluten">Gluten</SelectItem>
-                    <SelectItem value="soy">Soy</SelectItem>
-                    <SelectItem value="eggs">Eggs</SelectItem>
-                    <SelectItem value="fish">Fish</SelectItem>
-                    <SelectItem value="shellfish">Shellfish</SelectItem>
-                    <SelectItem value="wheat">Wheat</SelectItem>
-                    <SelectItem value="peanuts">Peanuts</SelectItem>
-                    <SelectItem value="sesame">Sesame</SelectItem>
-                  </SelectContent>
-                </Select>
-                {Array.isArray(newItemData.allergens) && (newItemData.allergens as string[]).length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {(newItemData.allergens as string[]).map((allergen, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {allergen}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => {
-                            setNewItemData({
-                              ...newItemData,
-                              allergens: (newItemData.allergens as string[]).filter((_, i) => i !== index)
-                            });
-                          }}
-                        />
-                      </Badge>
-                    ))}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="price">
+                    Price <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="space-y-1">
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={(newItemData.price as number) || ""}
+                      onChange={(e) => setNewItemData({...newItemData, price: parseFloat(e.target.value)})}
+                      className={formErrors.price ? "border-red-500" : ""}
+                    />
+                    {formErrors.price && (
+                      <p className="text-xs text-red-500">{formErrors.price}</p>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="recommendedItems" className="text-right pt-2">
-                Recommended Items
-              </Label>
-              <div className="col-span-3 space-y-2">
-                <Select 
-                  value="" 
-                  onValueChange={(value) => {
-                    if (value && !((newItemData.recommendedItems as string[]) || []).includes(value)) {
-                      setNewItemData({
-                        ...newItemData, 
-                        recommendedItems: [...((newItemData.recommendedItems as string[]) || []), value]
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select recommended items" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {menuItems
-                      .filter(item => item.status === 'available')
-                      .map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="category">
+                    Category <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="space-y-1">
+                    <Select
+                      value={(newItemData.category as string) || ''}
+                      onValueChange={(value) => setNewItemData({ ...newItemData, category: value, subcategory: "" })}
+                    >
+                      <SelectTrigger className={formErrors.category ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.category && (
+                      <p className="text-xs text-red-500">{formErrors.category}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="subcategory">
+                    Subcategory
+                  </Label>
+                  <Select
+                    disabled={!newItemData.category || loadingSubcategories}
+                    value={(newItemData.subcategory as string) || ''}
+                    onValueChange={(value) => setNewItemData({ ...newItemData, subcategory: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingSubcategories ? "Loading..." : "Select subcategory (optional)"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {subcategories.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-                {Array.isArray(newItemData.recommendedItems) && (newItemData.recommendedItems as string[]).length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {(newItemData.recommendedItems as string[]).map((itemId, index) => {
-                      const recommendedItem = menuItems.find(item => item.id === itemId);
-                      return (
-                        <Badge 
-                          key={index} 
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="w-1/2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="status">
+                    Status
+                  </Label>
+                  <Select value={(newItemData.status as string) || "Available"} onValueChange={(value) => setNewItemData({...newItemData, status: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Available">Available</SelectItem>
+                      <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+                      <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-muted" />
+
+            {/* Section 2: Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Details</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="rating">
+                    Rating
+                  </Label>
+                  <Input
+                    id="rating"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    placeholder="0.0"
+                    value={(newItemData.rating as number) || ""}
+                    onChange={(e) => setNewItemData({...newItemData, rating: parseFloat(e.target.value)})}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="preparationTime">
+                    Prep Time (min)
+                  </Label>
+                  <div className="space-y-1">
+                    <Input
+                      id="preparationTime"
+                      type="number"
+                      placeholder="0"
+                      value={(newItemData.preparationTime as number) || ""}
+                      onChange={(e) => setNewItemData({...newItemData, preparationTime: parseInt(e.target.value)})}
+                      className={formErrors.preparationTime ? "border-red-500" : ""}
+                    />
+                    {formErrors.preparationTime && (
+                      <p className="text-xs text-red-500">{formErrors.preparationTime}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="moodTag">
+                    Mood Tag
+                  </Label>
+                  <Select value={(newItemData.moodTag as string) || ""} onValueChange={(value) => setNewItemData({...newItemData, moodTag: value || null})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select mood" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="locked_in">Locked In</SelectItem>
+                      <SelectItem value="bougie">Bougie</SelectItem>
+                      <SelectItem value="homesick">Homesick</SelectItem>
+                      <SelectItem value="burnt_tf_out">Burnt TF Out</SelectItem>
+                      <SelectItem value="need_a_hug">Need a Hug</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="hungerLevelTag">
+                    Hunger Level
+                  </Label>
+                  <Select value={(newItemData.hungerLevelTag as string) || ""} onValueChange={(value) => setNewItemData({...newItemData, hungerLevelTag: value || null})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select hunger level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="little_hungry">Little Hungry</SelectItem>
+                      <SelectItem value="quite_hungry">Quite Hungry</SelectItem>
+                      <SelectItem value="very_hungry">Very Hungry</SelectItem>
+                      <SelectItem value="super_hungry">Super Hungry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
+                <div className="space-y-1">
+                  <Input
+                    id="description"
+                    placeholder="Enter item description (min 10 chars)"
+                    value={typeof newItemData.description === 'object'
+                      ? (newItemData.description as { text: string })?.text || ""
+                      : (newItemData.description as string) || ""}
+                    onChange={(e) => setNewItemData({...newItemData, description: e.target.value})}
+                    className={formErrors.description ? "border-red-500" : ""}
+                  />
+                  {formErrors.description && (
+                    <p className="text-xs text-red-500">{formErrors.description}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-muted" />
+
+            {/* Section 3: Offers & Seasons */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Offers &amp; Seasons</h3>
+              <div className="flex flex-col gap-1.5">
+                {/* Limited Time Offer */}
+                <Label htmlFor="isSpecial">
+                  Limited Time
+                </Label>
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="isSpecial"
+                    checked={(newItemData.specialOffer as any)?.isSpecial || false}
+                    onCheckedChange={(checked) =>
+                      setNewItemData({
+                        ...newItemData,
+                        specialOffer: {
+                          ...(newItemData.specialOffer as any),
+                          isSpecial: checked === true
+                        }
+                      })
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">Make this a limited time menu item</span>
+                </div>
+              </div>
+              {((newItemData.specialOffer as any)?.isSpecial) && (
+                <>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="validFrom">
+                        Available From
+                      </Label>
+                      <Input
+                        id="validFrom"
+                        type="date"
+                        value={(newItemData.specialOffer as any)?.validFrom || ""}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            specialOffer: {
+                              ...(newItemData.specialOffer as any),
+                              validFrom: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="validUntil">
+                        Available Until
+                      </Label>
+                      <Input
+                        id="validUntil"
+                        type="date"
+                        value={(newItemData.specialOffer as any)?.validUntil || ""}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            specialOffer: {
+                              ...(newItemData.specialOffer as any),
+                              validUntil: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="specialPrice">
+                        Special Price
+                      </Label>
+                      <Input
+                        id="specialPrice"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={(newItemData.specialOffer as any)?.specialPrice || ""}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            specialOffer: {
+                              ...(newItemData.specialOffer as any),
+                              specialPrice: parseFloat(e.target.value)
+                            }
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="offerDescription">
+                        Offer Description
+                      </Label>
+                      <Input
+                        id="offerDescription"
+                        placeholder="e.g. Festival Season Special"
+                        value={(newItemData.specialOffer as any)?.description || ""}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            specialOffer: {
+                              ...(newItemData.specialOffer as any),
+                              description: e.target.value
+                            }
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="isSeasonSpecial">
+                  Season Special
+                </Label>
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="isSeasonSpecial"
+                    checked={(newItemData.seasonal as any)?.isSeasonSpecial || false}
+                    onCheckedChange={(checked) => setNewItemData({
+                      ...newItemData,
+                      seasonal: {
+                        ...(newItemData.seasonal as any),
+                        isSeasonSpecial: checked === true,
+                      }
+                    })}
+                  />
+                  <span className="text-sm text-muted-foreground">Mark as season special item</span>
+                </div>
+              </div>
+              {((newItemData.seasonal as any)?.isSeasonSpecial) && (
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Season From</Label>
+                    <Input
+                      type="date"
+                      value={(newItemData.seasonal as any)?.seasonalFrom || ""}
+                      onChange={(e) => setNewItemData({
+                        ...newItemData,
+                        seasonal: { ...(newItemData.seasonal as any), seasonalFrom: e.target.value }
+                      })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Season Until</Label>
+                    <Input
+                      type="date"
+                      value={(newItemData.seasonal as any)?.seasonalUntil || ""}
+                      onChange={(e) => setNewItemData({
+                        ...newItemData,
+                        seasonal: { ...(newItemData.seasonal as any), seasonalUntil: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <hr className="border-muted" />
+
+            {/* Section 4: Images */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Images</h3>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="images">
+                  Product Images
+                </Label>
+                <div className="space-y-2">
+                  <Input
+                    id="images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    className={`cursor-pointer ${formErrors.images ? "border-red-500" : ""}`}
+                  />
+                  {imagePreviewUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {imagePreviewUrls.map((url, index) => (
+                        <div key={index} className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-20 h-20 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {formErrors.images ? (
+                    <p className="text-xs text-red-500">{formErrors.images}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Upload up to 5 images (max 5MB each). First image will be the main display.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-muted" />
+
+            {/* Section 5: Nutrition Info */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Nutrition Info (per serving)</h3>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-calories">Calories (kcal)</Label>
+                  <Input
+                    id="add-calories"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.calories || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), calories: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-protein">Protein (g)</Label>
+                  <Input
+                    id="add-protein"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.protein || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), protein: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-carbs">Carbs (g)</Label>
+                  <Input
+                    id="add-carbs"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.carbs || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), carbs: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-fat">Fat (g)</Label>
+                  <Input
+                    id="add-fat"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.fat || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fat: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-fiber">Fiber (g)</Label>
+                  <Input
+                    id="add-fiber"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.fiber || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), fiber: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-sugar">Sugar (g)</Label>
+                  <Input
+                    id="add-sugar"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.sugar || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), sugar: parseFloat(e.target.value) || 0 } })}
+                  />
+                </div>
+              </div>
+              <div className="w-1/2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="add-servingSize">Serving Size</Label>
+                  <Input
+                    id="add-servingSize"
+                    placeholder="e.g. 1 bowl, 200g"
+                    value={(newItemData.nutritionInfo as NutritionInfo)?.servingSize || ""}
+                    onChange={(e) => setNewItemData({ ...newItemData, nutritionInfo: { ...(newItemData.nutritionInfo as NutritionInfo), servingSize: e.target.value } })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-muted" />
+
+            {/* Section 6: Additional */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Additional</h3>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="allergens">
+                  Allergens
+                </Label>
+                <div className="space-y-2">
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (value && !((newItemData.allergens as string[]) || []).includes(value)) {
+                        setNewItemData({
+                          ...newItemData,
+                          allergens: [...((newItemData.allergens as string[]) || []), value]
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select allergens" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nuts">Nuts</SelectItem>
+                      <SelectItem value="dairy">Dairy</SelectItem>
+                      <SelectItem value="gluten">Gluten</SelectItem>
+                      <SelectItem value="soy">Soy</SelectItem>
+                      <SelectItem value="eggs">Eggs</SelectItem>
+                      <SelectItem value="fish">Fish</SelectItem>
+                      <SelectItem value="shellfish">Shellfish</SelectItem>
+                      <SelectItem value="wheat">Wheat</SelectItem>
+                      <SelectItem value="peanuts">Peanuts</SelectItem>
+                      <SelectItem value="sesame">Sesame</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {Array.isArray(newItemData.allergens) && (newItemData.allergens as string[]).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {(newItemData.allergens as string[]).map((allergen, index) => (
+                        <Badge
+                          key={index}
                           variant="secondary"
                           className="flex items-center gap-1"
                         >
-                          {recommendedItem?.name || itemId}
-                          <X 
-                            className="h-3 w-3 cursor-pointer" 
-                            onClick={() => {
-                              setNewItemData({
-                                ...newItemData,
-                                recommendedItems: (newItemData.recommendedItems as string[]).filter((_, i) => i !== index)
-                              });
+                          {allergen}
+                          <button
+                            type="button"
+                            className="ml-1 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setNewItemData((prev) => ({
+                                ...prev,
+                                allergens: (prev.allergens as string[]).filter((_, i) => i !== index)
+                              }));
                             }}
-                          />
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Select menu items to recommend with this dish
-                </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="recommendedItems">
+                  Recommended Items
+                </Label>
+                <div className="space-y-2">
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (value && !((newItemData.recommendedItems as string[]) || []).includes(value)) {
+                        setNewItemData({
+                          ...newItemData,
+                          recommendedItems: [...((newItemData.recommendedItems as string[]) || []), value]
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select recommended items" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {menuItems
+                        .filter(item => item.status === 'available')
+                        .map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {Array.isArray(newItemData.recommendedItems) && (newItemData.recommendedItems as string[]).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {(newItemData.recommendedItems as string[]).map((itemId, index) => {
+                        const recommendedItem = menuItems.find(item => item.id === itemId);
+                        return (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
+                            {recommendedItem?.name || itemId}
+                            <X
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => {
+                                setNewItemData({
+                                  ...newItemData,
+                                  recommendedItems: (newItemData.recommendedItems as string[]).filter((_, i) => i !== index)
+                                });
+                              }}
+                            />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Select menu items to recommend with this dish
+                  </p>
+                </div>
               </div>
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => {

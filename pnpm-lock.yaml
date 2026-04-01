@@ -132,6 +132,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3
         version: 3.3.0
+      '@next/swc-darwin-arm64':
+        specifier: ^16.2.2
+        version: 16.2.2
       '@types/node':
         specifier: ^20
         version: 20.17.22
@@ -621,6 +624,12 @@ packages:
 
   '@next/swc-darwin-arm64@15.5.7':
     resolution: {integrity: sha512-IZwtxCEpI91HVU/rAUOOobWSZv4P2DeTtNaCdHqLcTJU4wdNXgAySvKa/qJCgR5m6KI8UsKDXtO2B31jcaw1Yw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@next/swc-darwin-arm64@16.2.2':
+    resolution: {integrity: sha512-B92G3ulrwmkDSEJEp9+XzGLex5wC1knrmCSIylyVeiAtCIfvEJYiN3v5kXPlYt5R4RFlsfO/v++aKV63Acrugg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
@@ -4373,6 +4382,8 @@ snapshots:
 
   '@next/swc-darwin-arm64@15.5.7':
     optional: true
+
+  '@next/swc-darwin-arm64@16.2.2': {}
 
   '@next/swc-darwin-x64@15.5.7':
     optional: true
