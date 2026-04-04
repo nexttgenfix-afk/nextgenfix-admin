@@ -19,6 +19,7 @@ import {
   updateReferral,
   updateTax,
   updateScheduling,
+  updateLoyalty,
   type Settings
 } from "@/lib/api/settings"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -83,6 +84,10 @@ export default function SettingsPage() {
       maxGuestsPerReservation: 20,
       reservationDuration: 120,
     },
+    loyalty: {
+      nanoPointsPerOrder: 10,
+      nanoPointsConversionRate: 10,
+    },
   })
 
   const { toast } = useToast()
@@ -103,6 +108,8 @@ export default function SettingsPage() {
   const [originalReferral, setOriginalReferral] = useState<Settings['referral'] | null>(null)
   const [isEditingScheduling, setIsEditingScheduling] = useState<boolean>(false)
   const [originalScheduling, setOriginalScheduling] = useState<Settings['scheduling'] | null>(null)
+  const [isEditingLoyalty, setIsEditingLoyalty] = useState<boolean>(false)
+  const [originalLoyalty, setOriginalLoyalty] = useState<Settings['loyalty'] | null>(null)
 
   // Fetch settings
   const { data: settingsData, isLoading } = useQuery({
@@ -254,6 +261,19 @@ export default function SettingsPage() {
     }
   })
 
+  const loyaltyMutation = useMutation({
+    mutationFn: updateLoyalty,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      setIsEditingLoyalty(false)
+      setOriginalLoyalty(null)
+      toast({ title: 'Success', description: 'Loyalty settings updated' })
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: getErrorMessage(error, 'Failed to update loyalty settings') })
+    }
+  })
+
   const handleSaveBusiness = () => businessMutation.mutate(settings.business)
   const handleSaveHours = () => hoursMutation.mutate(settings.hours)
   const handleSaveTax = () => taxMutation.mutate(settings.tax)
@@ -261,6 +281,7 @@ export default function SettingsPage() {
   const handleSaveTiers = () => tiersMutation.mutate(settings.tiers)
   const handleSaveReferral = () => referralMutation.mutate(settings.referral)
   const handleSaveScheduling = () => schedulingMutation.mutate(settings.scheduling)
+  const handleSaveLoyalty = () => loyaltyMutation.mutate(settings.loyalty)
 
   
 
@@ -342,6 +363,16 @@ export default function SettingsPage() {
     }))
   }
 
+  const updateLoyaltySetting = (field: keyof Settings['loyalty'], value: number) => {
+    setSettings(prev => ({
+      ...prev,
+      loyalty: {
+        ...prev.loyalty,
+        [field]: value,
+      },
+    }))
+  }
+
   const days = [
     { key: 'monday', label: 'Monday' },
     { key: 'tuesday', label: 'Tuesday' },
@@ -378,13 +409,14 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="hours">Hours</TabsTrigger>
           <TabsTrigger value="tax">Tax</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="tiers">Tiers</TabsTrigger>
           <TabsTrigger value="referral">Referral</TabsTrigger>
+          <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
           {/* <TabsTrigger value="scheduling">Scheduling</TabsTrigger> */}
         </TabsList>
 
@@ -1000,6 +1032,87 @@ export default function SettingsPage() {
                   disabled={referralMutation.isPending}
                 >
                   {referralMutation.isPending ? 'Saving...' : isEditingReferral ? 'Save Referral' : 'Edit Referral'}
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="loyalty" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Gift className="mr-2 h-5 w-5" />
+                Nano Points Loyalty
+              </CardTitle>
+              <CardDescription>
+                Configure nano points earning and redemption for customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nano-points-per-order">Nano Points Per Order</Label>
+                  <Input
+                    id="nano-points-per-order"
+                    type="number"
+                    min="0"
+                    value={settings.loyalty.nanoPointsPerOrder}
+                    onChange={(e) => updateLoyaltySetting('nanoPointsPerOrder', parseInt(e.target.value) || 0)}
+                    disabled={!isEditingLoyalty}
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Points awarded to customers when an order is completed
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nano-points-conversion-rate">Points to Rupee Conversion Rate</Label>
+                  <Input
+                    id="nano-points-conversion-rate"
+                    type="number"
+                    min="1"
+                    value={settings.loyalty.nanoPointsConversionRate}
+                    onChange={(e) => updateLoyaltySetting('nanoPointsConversionRate', parseInt(e.target.value) || 0)}
+                    disabled={!isEditingLoyalty}
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    How many nano points equal 1 rupee (e.g., 10 points = ₹1)
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="justify-end">
+              <div className="flex items-center space-x-2">
+                {isEditingLoyalty && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (originalLoyalty) {
+                        setSettings(prev => ({ ...prev, loyalty: originalLoyalty }))
+                      }
+                      setOriginalLoyalty(null)
+                      setIsEditingLoyalty(false)
+                    }}
+                    disabled={loyaltyMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => {
+                    if (isEditingLoyalty) {
+                      handleSaveLoyalty()
+                    } else {
+                      setOriginalLoyalty({ ...settings.loyalty })
+                      setIsEditingLoyalty(true)
+                    }
+                  }}
+                  disabled={loyaltyMutation.isPending}
+                >
+                  {loyaltyMutation.isPending ? 'Saving...' : isEditingLoyalty ? 'Save Loyalty' : 'Edit Loyalty'}
                 </Button>
               </div>
             </CardFooter>

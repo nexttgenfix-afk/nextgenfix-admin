@@ -67,6 +67,11 @@ export interface SchedulingConfig {
   reservationDuration: number
 }
 
+export interface LoyaltyConfig {
+  nanoPointsPerOrder: number
+  nanoPointsConversionRate: number
+}
+
 export interface Settings {
   business: BusinessInfo
   hours: BusinessHoursMap
@@ -75,6 +80,7 @@ export interface Settings {
   tiers: TierConfig
   referral: ReferralConfig
   scheduling: SchedulingConfig
+  loyalty: LoyaltyConfig
 }
 
 export const getSettings = async () => {
@@ -133,6 +139,10 @@ export const getSettings = async () => {
       cancellationHours: raw2?.schedulingConfig?.cancellationHours ?? 0,
       maxGuestsPerReservation: raw2?.schedulingConfig?.maxGuestsPerReservation ?? 0,
       reservationDuration: raw2?.schedulingConfig?.slotDuration ?? 0,
+    },
+    loyalty: {
+      nanoPointsPerOrder: raw2?.loyaltyConfig?.nanoPointsPerOrder ?? 10,
+      nanoPointsConversionRate: raw2?.loyaltyConfig?.nanoPointsConversionRate ?? 10,
     },
   }
 
@@ -215,6 +225,15 @@ export const updateReferral = async (payload: Partial<Settings['referral']>) => 
   if ((payload as unknown as { minOrderValue?: number }).minOrderValue !== undefined) body.minOrderAmount = (payload as unknown as { minOrderValue?: number }).minOrderValue
 
   const response = await apiClient.put('/settings/referral', body)
+  return response.data
+}
+
+export const updateLoyalty = async (payload: Partial<Settings['loyalty']>) => {
+  const body: Record<string, number | undefined> = {}
+  if (payload.nanoPointsPerOrder !== undefined) body.nanoPointsPerOrder = payload.nanoPointsPerOrder
+  if (payload.nanoPointsConversionRate !== undefined) body.nanoPointsConversionRate = payload.nanoPointsConversionRate
+
+  const response = await apiClient.put('/settings/loyalty', body)
   return response.data
 }
 

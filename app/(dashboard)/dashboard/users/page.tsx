@@ -109,6 +109,10 @@ export default function UsersPage() {
   const [newUserData, setNewUserData] = useState<Partial<User>>({});
   const [userAddresses, setUserAddresses] = useState<UserLocation[]>([]);
   const [cancelledOrderCount, setCancelledOrderCount] = useState(0);
+  const [bonusDialogOpen, setBonusDialogOpen] = useState(false);
+  const [bonusPoints, setBonusPoints] = useState<number>(0);
+  const [bonusDescription, setBonusDescription] = useState<string>("");
+  const [bonusUserId, setBonusUserId] = useState<string>("");
   const { toast } = useToast();
 
   // Sync filters to URL
@@ -243,6 +247,25 @@ export default function UsersPage() {
     }
   };
 
+  const handleAddBonusPoints = async () => {
+    if (!bonusUserId || bonusPoints <= 0) {
+      toast({ title: "Error", description: "Please provide valid points amount." });
+      return;
+    }
+    try {
+      await usersApi.addBonusNanoPoints(bonusUserId, bonusPoints, bonusDescription);
+      setBonusDialogOpen(false);
+      setBonusPoints(0);
+      setBonusDescription("");
+      setBonusUserId("");
+      setRefreshKey(prev => prev + 1);
+      toast({ title: "Success!", description: `Added ${bonusPoints} bonus nano points.` });
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, "Failed to add bonus points.");
+      toast({ title: "Error", description: errorMessage });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -357,6 +380,7 @@ export default function UsersPage() {
               <TableHead>Contact Info</TableHead>
               <TableHead>Preferences</TableHead>
               <TableHead>Tier</TableHead>
+              <TableHead>Nano Points</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Orders</TableHead>
               <TableHead>Registered On</TableHead>
@@ -391,6 +415,11 @@ export default function UsersPage() {
                   </div>
                 </TableCell>
                 <TableCell>{getTierBadge(user.tier)}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="font-mono">
+                    {user.nanoPoints ?? 0}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   <StatusBadge
                     status={user.status}
@@ -428,6 +457,16 @@ export default function UsersPage() {
                         }}
                       >
                         <Edit className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setBonusUserId(user._id);
+                          setBonusPoints(0);
+                          setBonusDescription("");
+                          setBonusDialogOpen(true);
+                        }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" /> Add Bonus Points
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -529,6 +568,12 @@ export default function UsersPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Total Orders</p>
                   <p className="text-sm">{selectedUser.totalOrders ?? 0}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Nano Points</p>
+                  <Badge variant="secondary" className="font-mono">
+                    {selectedUser.nanoPoints ?? 0}
+                  </Badge>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Cancelled Orders</p>
@@ -805,6 +850,53 @@ export default function UsersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddUser}>Add User</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Bonus Points Dialog */}
+      <Dialog open={bonusDialogOpen} onOpenChange={setBonusDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Bonus Nano Points</DialogTitle>
+            <DialogDescription>
+              Add bonus nano points to a user's account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="bonusPoints" className="text-right">
+                Points
+              </Label>
+              <Input
+                id="bonusPoints"
+                type="number"
+                min="1"
+                value={bonusPoints || ""}
+                onChange={(e) => setBonusPoints(Number(e.target.value))}
+                className="col-span-3"
+                placeholder="Enter points amount"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="bonusDescription" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="bonusDescription"
+                value={bonusDescription}
+                onChange={(e) => setBonusDescription(e.target.value)}
+                className="col-span-3"
+                placeholder="Optional description (e.g., Loyalty bonus)"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBonusDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddBonusPoints}>Add Points</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

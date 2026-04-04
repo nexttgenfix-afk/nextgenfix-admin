@@ -82,3 +82,8 @@ export const getAbandonedCarts = async () => {
   const response = await apiClient.get<{ success: boolean; carts: unknown[]; total: number }>('/admin/carts/abandoned')
   return response.data
 }
+
+export const addBonusNanoPoints = async (userId: string, points: number, description?: string) => {
+  const response = await apiClient.post('/users/nano-points/bonus', { userId, points, description })
+  return response.data
+}

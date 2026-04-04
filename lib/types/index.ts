@@ -26,6 +26,7 @@ export interface User {
   isActive: boolean
   createdAt: string | Date
   calorieGoal?: number
+  nanoPoints?: number
   preferences?: {
     allergens?: string[]
     dietaryPreferences?: string[]
@@ -69,7 +70,7 @@ export interface OrderItem {
 export interface Order {
   _id: string
   userId: string
-  type: 'delivery' | 'take_away' | 'car'
+  type: 'delivery' | 'take_away' | 'car' | 'dine_in'
   items: OrderItem[]
   subtotal: number
   tierDiscount: number
