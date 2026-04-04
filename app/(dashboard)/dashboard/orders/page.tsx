@@ -317,6 +317,7 @@ export default function OrdersPage() {
               <SelectItem value="delivery">Delivery</SelectItem>
               <SelectItem value="take_away">Take Away</SelectItem>
               <SelectItem value="car">Car</SelectItem>
+              <SelectItem value="dine_in">Dine In</SelectItem>
             </SelectContent>
           </Select>
         </div>
